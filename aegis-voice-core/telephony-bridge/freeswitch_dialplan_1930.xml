@@ -1,0 +1,21 @@
+<include>
+  <!--
+    Project Aegis-Voice: National Cybercrime Helpline 1930 Production Dialplan
+    Implements non-disruptive SMBF_READ_STREAM shadow audio forking.
+    Ensures zero RTP jitter on primary police operator bridge.
+  -->
+  <extension name="1930_cybercrime_aegis_shadow_fork">
+    <condition field="destination_number" expression="^1930$">
+      <action application="answer"/>
+      
+      <!-- Dedicated service threads isolate WebSocket I/O from RTP switching threads -->
+      <action application="set" data="MOD_AUDIO_FORK_SERVICE_THREADS=4"/>
+      
+      <!-- Export media bug on answer: 16kHz 16-bit linear PCM stereo (Ch0: Caller, Ch1: Officer) -->
+      <action application="export" data="nolocal:execute_on_answer=uuid_audio_stream ${uuid} start ws://127.0.0.1:8080/ws/stream stereo 16k"/>
+      
+      <!-- Bridge directly to the 1930 Cybercrime Police Dispatcher Queue -->
+      <action application="bridge" data="user/1930_dispatcher_queue"/>
+    </condition>
+  </extension>
+</include>
