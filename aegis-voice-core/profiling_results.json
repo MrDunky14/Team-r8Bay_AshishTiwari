@@ -1,0 +1,194 @@
+{
+  "profiling_metadata": {
+    "timestamp_utc": "2026-10-25T08:01:33.151627+00:00",
+    "suite_version": "1.0.0-profiling-r3",
+    "evaluator": "AegisVoicePipelineProfilingSuite",
+    "overall_status": "ALL_SLAS_PASSED",
+    "sla_compliance": "FULL_SLA_COMPLIANCE",
+    "dpdp_compliance": "DPDP_2023_ZERO_DISK_CERTIFIED",
+    "statutory_sla_target_ms": 800.0,
+    "total_execution_duration_sec": 1.0191
+  },
+  "stage_latency_profiles": {
+    "stage_1_ingestion_gateway": {
+      "stage_id": 1,
+      "stage_name": "Ingestion Gateway",
+      "sla_target_ms": 25.0,
+      "measured_mean_ms": 20.0217,
+      "measured_p50_ms": 20.0197,
+      "measured_p95_ms": 20.0226,
+      "measured_p99_ms": 20.0463,
+      "measured_max_ms": 20.1352,
+      "ram_push_mean_ms": 0.0217,
+      "iterations": 100,
+      "status": "PASSED",
+      "passed": true
+    },
+    "stage_2_silero_vad": {
+      "stage_id": 2,
+      "stage_name": "Silero VAD",
+      "sla_target_ms": 2.0,
+      "measured_mean_ms": 0.0241,
+      "measured_p50_ms": 0.0239,
+      "measured_p95_ms": 0.0249,
+      "measured_p99_ms": 0.0264,
+      "measured_max_ms": 0.0337,
+      "iterations": 100,
+      "status": "PASSED",
+      "passed": true
+    },
+    "stage_3_acoustic_ser": {
+      "stage_id": 3,
+      "stage_name": "Acoustic SER",
+      "sla_target_ms": 25.0,
+      "measured_mean_ms": 5.7018,
+      "measured_p50_ms": 5.6539,
+      "measured_p95_ms": 6.1371,
+      "measured_p99_ms": 6.3182,
+      "measured_max_ms": 6.3806,
+      "iterations": 33,
+      "status": "PASSED",
+      "passed": true
+    },
+    "stage_4_semantic_asr_pii": {
+      "stage_id": 4,
+      "stage_name": "Semantic ASR + PII Scrubber",
+      "sla_target_ms": 125.0,
+      "measured_mean_ms": 115.0433,
+      "measured_p50_ms": 115.0428,
+      "measured_p95_ms": 115.0483,
+      "measured_p99_ms": 115.0627,
+      "measured_max_ms": 115.0719,
+      "pii_scrubber_mean_ms": 0.0433,
+      "pii_scrubber_p99_ms": 0.0627,
+      "pii_scrubber_sla_ms": 1.8,
+      "iterations": 100,
+      "status": "PASSED",
+      "passed": true
+    },
+    "stage_5_neuro_symbolic_late_fusion": {
+      "stage_id": 5,
+      "stage_name": "Neuro-Symbolic Late Fusion",
+      "sla_target_ms": 5.0,
+      "measured_mean_ms": 0.008,
+      "measured_p50_ms": 0.0083,
+      "measured_p95_ms": 0.0086,
+      "measured_p99_ms": 0.009,
+      "measured_max_ms": 0.0094,
+      "iterations": 100,
+      "status": "PASSED",
+      "passed": true
+    },
+    "stage_6_ui_telemetry_render": {
+      "stage_id": 6,
+      "stage_name": "UI Telemetry & Render",
+      "sla_target_ms": 18.0,
+      "measured_mean_ms": 12.0299,
+      "measured_p50_ms": 12.0273,
+      "measured_p95_ms": 12.037,
+      "measured_p99_ms": 12.054,
+      "measured_max_ms": 12.0561,
+      "pure_render_mean_ms": 0.0299,
+      "iterations": 100,
+      "status": "PASSED",
+      "passed": true
+    }
+  },
+  "stage_budget_summary": {
+    "nominal_budget_sum_ms": 200.0,
+    "measured_mean_sum_ms": 152.83,
+    "statutory_sla_limit_ms": 800.0,
+    "all_stages_passed": true
+  },
+  "concurrency_benchmarks": {
+    "concurrency_10": {
+      "concurrent_streams": 10,
+      "total_processed_cycles": 20,
+      "measured_min_ms": 167.87,
+      "measured_mean_ms": 185.99,
+      "measured_p50_ms": 185.49,
+      "measured_p90_ms": 193.07,
+      "measured_p95_ms": 199.68,
+      "measured_p99_ms": 206.77,
+      "measured_max_ms": 208.54,
+      "sla_targets": {
+        "p50_max_ms": 450.0,
+        "p99_max_ms": 600.0,
+        "statutory_max_ms": 800.0
+      },
+      "p50_passed": true,
+      "p99_passed": true,
+      "max_passed": true,
+      "status": "PASSED"
+    },
+    "concurrency_25": {
+      "concurrent_streams": 25,
+      "total_processed_cycles": 50,
+      "measured_min_ms": 178.64,
+      "measured_mean_ms": 232.66,
+      "measured_p50_ms": 234.07,
+      "measured_p90_ms": 262.47,
+      "measured_p95_ms": 265.22,
+      "measured_p99_ms": 273.11,
+      "measured_max_ms": 280.06,
+      "sla_targets": {
+        "p50_max_ms": 450.0,
+        "p99_max_ms": 600.0,
+        "statutory_max_ms": 800.0
+      },
+      "p50_passed": true,
+      "p99_passed": true,
+      "max_passed": true,
+      "status": "PASSED"
+    },
+    "concurrency_50": {
+      "concurrent_streams": 50,
+      "total_processed_cycles": 100,
+      "measured_min_ms": 185.12,
+      "measured_mean_ms": 271.51,
+      "measured_p50_ms": 274.95,
+      "measured_p90_ms": 320.79,
+      "measured_p95_ms": 329.41,
+      "measured_p99_ms": 338.21,
+      "measured_max_ms": 342.14,
+      "sla_targets": {
+        "p50_max_ms": 450.0,
+        "p99_max_ms": 600.0,
+        "statutory_max_ms": 800.0
+      },
+      "p50_passed": true,
+      "p99_passed": true,
+      "max_passed": true,
+      "status": "PASSED"
+    }
+  },
+  "glass_to_glass_summary": {
+    "concurrency_tiers_tested": [
+      10,
+      25,
+      50
+    ],
+    "overall_p50_ms": 231.5,
+    "overall_p99_ms": 338.21,
+    "overall_max_ms": 342.14,
+    "p50_sla_target_ms": 450.0,
+    "p99_sla_target_ms": 600.0,
+    "statutory_sla_target_ms": 800.0,
+    "p50_sla_passed": true,
+    "p99_sla_passed": true,
+    "max_sla_passed": true,
+    "status": "PASSED"
+  },
+  "zero_disk_storage_audit": {
+    "audit_name": "DPDP Act 2023 & UIDAI Zero-Disk Storage Invariant Audit",
+    "search_root": "K:\\My_ML_Projects\\Team\u03c0r8Bay_AshishTiwari\\aegis-voice-core",
+    "disk_wav_files_found": 0,
+    "disk_pcm_files_found": 0,
+    "disk_raw_files_found": 0,
+    "total_audio_files_on_disk": 0,
+    "total_audio_bytes_on_disk": 0,
+    "zero_disk_persistence_invariant": "VERIFIED_TMPFS_VOLATILE_ONLY",
+    "dpdp_compliant": true,
+    "status": "PASSED"
+  }
+}

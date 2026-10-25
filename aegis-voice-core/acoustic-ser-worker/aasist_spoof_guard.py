@@ -20,6 +20,12 @@ class AASISTSpoofGuard:
         if len(audio_16k) < 640:
             return 0.05, False
 
+        # Energy check: silence or near-zero unvoiced audio is not synthetic deepfake speech
+        rms = float(np.sqrt(np.mean(np.square(audio_16k))))
+        max_amp = float(np.max(np.abs(audio_16k)))
+        if rms < 1e-4 or max_amp < 1e-4:
+            return 0.0, False
+
         # Physical vocal tract dynamics: unnatural smoothness or robotic phase coherence
         # Compute spectral rolloff and phase irregularity
         fft_vals = np.fft.rfft(audio_16k)

@@ -9,17 +9,23 @@ from typing import Tuple, List
 
 # Spoken digit conversion map across English, Hindi, and Hinglish dialects
 SPOKEN_DIGIT_MAP = {
-    "zero": "0", "shunya": "0", "one": "1", "ek": "1", "two": "2", "do": "2",
-    "three": "3", "teen": "3", "four": "4", "chaar": "4", "five": "5", "paanch": "5",
-    "six": "6", "chhah": "6", "seven": "7", "saat": "7", "eight": "8", "aath": "8",
+    "zero": "0", "shunya": "0", "sunya": "0", "oh": "0", "o": "0",
+    "one": "1", "ek": "1", "two": "2", "do": "2",
+    "three": "3", "teen": "3", "four": "4", "chaar": "4", "char": "4",
+    "five": "5", "paanch": "5", "panch": "5",
+    "six": "6", "chhah": "6", "che": "6", "chhe": "6",
+    "seven": "7", "saat": "7", "eight": "8", "aath": "8",
     "nine": "9", "nau": "9"
 }
 
 # Pre-compiled regex patterns per Section 4 Statutory Specifications
 UID_PATTERN = re.compile(r"\b([2-9]{1}[0-9]{3})[\s-]?([0-9]{4})[\s-]?([0-9]{4})\b")
 PAN_PATTERN = re.compile(r"\b[A-Z]{5}[0-9]{4}[A-Z]{1}\b", re.IGNORECASE)
+SPACED_PAN_PATTERN = re.compile(
+    r"(?i)\b([A-Z])\s+([A-Z])\s+([A-Z])\s+([A-Z])\s+([A-Z])[\s-]*([0-9](?:[\s-]*[0-9]){3})[\s-]*([A-Z])\b"
+)
 OTP_CONTEXT_PATTERN = re.compile(
-    r"(?i)\b(otp|pin|cvv|code|password)\b(?:\s+\w+){0,5}?\s+\b([0-9]{3,8})\b"
+    r"(?i)(?:\b(otp|pin|cvv|code|password)\b((?:\s+[\w,.-]+){0,5}?\s+)(?<![X\-])\b([0-9]{3,8})\b|(?<![X\-])\b([0-9]{3,8})\b((?:\s+[\w,.-]+){0,5}?\s+)\b(otp|pin|cvv|code|password)\b)"
 )
 BANK_ACCT_PATTERN = re.compile(r"\b([0-9]{5,14})([0-9]{4})\b")
 
@@ -43,7 +49,8 @@ CRITICAL_LEXICAL_VECTORS = {
 }
 
 OVERRIDE_TRIGGERS = [
-    "digital arrest", "rtgs", "lakh", "crore", "suicide", "account emptied", "cbi warrant"
+    "digital arrest", "digital-arrest", "rtgs", "lakh", "crore", "suicide", "account emptied", "cbi warrant",
+    "upi", "otp", "customs", "fedex", "parcel", "seized", "aadhaar block", "cyber", "bank account emptied"
 ]
 
 def normalize_spoken_digits(text: str) -> str:
@@ -72,6 +79,12 @@ def normalize_spoken_digits(text: str) -> str:
         i += 1
     return " ".join(out)
 
+def _mask_otp_match(m: re.Match) -> str:
+    if m.group(1):
+        return f"{m.group(1)}{m.group(2)}[REDACTED-OTP]"
+    else:
+        return f"[REDACTED-OTP]{m.group(5)}{m.group(6)}"
+
 def scrub_pii_in_memory(raw_transcript: str) -> str:
     """
     Executes in volatile memory in <1.8ms.
@@ -79,14 +92,19 @@ def scrub_pii_in_memory(raw_transcript: str) -> str:
     """
     normalized = normalize_spoken_digits(raw_transcript)
     
-    # 1. Mask 12-digit government ID (Aadhaar): preserve only last 4 digits
-    scrubbed = UID_PATTERN.sub(r"XXXX-XXXX-\3", normalized)
+    # Collapse space-separated and punctuation-separated digit runs (e.g. '9 8 4 4 ...' or '9, 8, 4...' -> '9844...')
+    # to guarantee dictated numbers match masking regexes with zero cleartext leakage
+    collapsed = re.sub(r'(?<=\d)[\s,.-]+(?=\d)', '', normalized)
     
-    # 2. Mask PAN
+    # 1. Mask 12-digit government ID (Aadhaar): preserve only last 4 digits
+    scrubbed = UID_PATTERN.sub(r"XXXX-XXXX-\3", collapsed)
+    
+    # 2. Mask PAN (both standard contiguous and phonetically space-separated)
+    scrubbed = SPACED_PAN_PATTERN.sub("[REDACTED-PAN]", scrubbed)
     scrubbed = PAN_PATTERN.sub("[REDACTED-PAN]", scrubbed)
     
-    # 3. Mask OTP / PIN near trigger context
-    scrubbed = OTP_CONTEXT_PATTERN.sub(r"\1 [REDACTED-OTP]", scrubbed)
+    # 3. Mask OTP / PIN near trigger context (bidirectional)
+    scrubbed = OTP_CONTEXT_PATTERN.sub(_mask_otp_match, scrubbed)
     
     # 4. Mask long bank account numbers: preserve last 4 digits
     scrubbed = BANK_ACCT_PATTERN.sub(r"ACCT-XXXX-\2", scrubbed)
@@ -102,13 +120,14 @@ def extract_semantic_threat_score(scrubbed_text: str) -> Tuple[float, bool, List
     - matched_keywords list
     """
     lower_text = scrubbed_text.lower()
+    clean_text = lower_text.replace("-", " ")
     matched_keywords = []
     max_score = 0.0
 
     for kw, weight in CRITICAL_LEXICAL_VECTORS.items():
-        if kw in lower_text:
+        if kw in lower_text or kw in clean_text:
             matched_keywords.append(kw.upper())
             max_score = max(max_score, weight)
 
-    override_flag = any(k in lower_text for k in OVERRIDE_TRIGGERS)
+    override_flag = any(k in lower_text or k in clean_text for k in OVERRIDE_TRIGGERS) or (max_score >= 0.80)
     return max_score, override_flag, matched_keywords

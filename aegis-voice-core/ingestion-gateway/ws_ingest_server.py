@@ -47,6 +47,8 @@ app.add_middleware(
 ser_runner = Emotion2VecRunner()
 asr_worker = IndicConformerStreamWorker()
 vad_router = SileroVADRouter()
+if not hasattr(SileroVADRouter, "route_audio_chunk"):
+    SileroVADRouter.route_audio_chunk = SileroVADRouter.route_audio
 shadow_evaluator = SilentShadowEvaluator()
 
 # Dispatch UI Connected Clients
@@ -199,7 +201,7 @@ async def broadcast_to_dispatch(event_type: str, data: Any):
         return
     payload = json.dumps({"type": event_type, "data": data, "timestamp": time.time()})
     disconnected = set()
-    for ws in active_ui_websockets:
+    for ws in list(active_ui_websockets):
         try:
             await ws.send_text(payload)
         except Exception:
@@ -235,7 +237,11 @@ async def websocket_dispatch_endpoint(websocket: WebSocket):
                     }))
             elif action == "TRIGGER_3STREAM_STRESS_TEST":
                 await run_stress_test_simulation()
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, RuntimeError):
+        pass
+    except Exception:
+        pass
+    finally:
         active_ui_websockets.discard(websocket)
 
 @app.websocket("/ws/stream")
@@ -258,14 +264,25 @@ async def websocket_stream_endpoint(websocket: WebSocket):
                 audio_window = ring_buf.get_window()
 
                 if audio_window is not None:
-                    # Run SER + ASR + Late Fusion
+                    # 1. Silero VAD silence gating & SNR split preprocessing
+                    routed = vad_router.route_audio_chunk(audio_window)
+                    if not routed.is_speech:
+                        # Gated silence frame: skip downstream inference
+                        continue
+
+                    # 2. Run SER on raw/preserved audio & ASR on conditioned audio
                     call_time_s = time.time() - start_time
-                    ser_res = ser_runner.infer(call_uuid, audio_window, call_time_s)
+                    ser_res = ser_runner.infer(call_uuid, routed.ser_conditioned_audio, call_time_s)
                     
-                    # Synthesize/infer ASR
-                    asr_res = asr_worker.transcribe_chunk(audio_window)
+                    # 3. Synthesize/infer ASR on conditioned audio
+                    asr_res = asr_worker.transcribe_chunk(routed.asr_conditioned_audio)
                     
-                    # Late Fusion
+                    # 4. Epistemic uncertainty scaling under severe noise (<10 dB SNR)
+                    epistemic_unc = ser_res["epistemic_uncertainty"]
+                    if routed.snr_db < 10.0:
+                        epistemic_unc = max(epistemic_unc, 0.25)
+
+                    # 5. Late Fusion neuro-symbolic triage
                     triage_res = compute_multimodal_triage(
                         valence=ser_res["valence"],
                         arousal=ser_res["arousal"],
@@ -273,7 +290,7 @@ async def websocket_stream_endpoint(websocket: WebSocket):
                         jitter_pct=ser_res["jitter_pct"],
                         sigma_f0_hz=12.0,
                         spoof_prob=ser_res["spoof_prob"],
-                        epistemic_uncertainty=ser_res["epistemic_uncertainty"],
+                        epistemic_uncertainty=epistemic_unc,
                         s_semantic=asr_res["semantic_threat_score"],
                         override_active=asr_res["semantic_override"],
                         matched_keywords=asr_res["matched_keywords"],
@@ -286,11 +303,20 @@ async def websocket_stream_endpoint(websocket: WebSocket):
                         "call_uuid": call_uuid,
                         "ser": ser_res,
                         "asr": asr_res,
-                        "triage": triage_res
+                        "triage": triage_res,
+                        "vad": {
+                            "is_speech": routed.is_speech,
+                            "speech_prob": routed.speech_prob,
+                            "snr_db": routed.snr_db
+                        }
                     })
             elif "text" in message:
                 pass
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, RuntimeError):
+        pass
+    except Exception:
+        pass
+    finally:
         ring_buf.clear()
 
 @app.post("/api/stress-test")

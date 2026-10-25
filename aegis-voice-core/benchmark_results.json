@@ -1,0 +1,132 @@
+{
+  "benchmark_metadata": {
+    "timestamp_utc": "2026-10-25T07:57:38.532282+00:00",
+    "suite_version": "1.0.0-adversarial-r2",
+    "evaluator": "AegisVoiceAdversarialBenchmarkSuite",
+    "total_scenarios": 5,
+    "scenarios_passed": 5,
+    "scenarios_failed": 0,
+    "overall_status": "ALL_GATES_PASSED",
+    "production_graduation_status": "GRADUATION_APPROVED_READY_FOR_INDICATIVE_UI",
+    "execution_duration_sec": 0.0517
+  },
+  "scenarios": {
+    "scenario_1_stoic_victim_shock_paralysis": {
+      "scenario_id": 1,
+      "name": "Stoic Victim / Shock Paralysis",
+      "status": "PASSED",
+      "passed": true,
+      "execution_time_ms": 0.22,
+      "target_urgency_min": 0.85,
+      "measured_urgency": 1.0,
+      "badge": "PRIORITY-1 [SHOCK / DISSOCIATION TRIAGE]",
+      "state": "S4_LIEN_PAYLOAD_STAGED",
+      "shock_paralysis_flag": true,
+      "cfcfrms_lien_staged": true,
+      "parameters": {
+        "sigma_f0_hz": 4.2,
+        "arousal": 0.19,
+        "s_semantic": 0.95,
+        "override_active": true,
+        "matched_keywords": [
+          "DIGITAL ARREST",
+          "CBI OFFICER",
+          "RTGS",
+          "LAKH"
+        ],
+        "detected_rail": "RTGS",
+        "p_freeze": 0.85
+      },
+      "details": "Monotone flat pitch variance (sigma_F0 = 4.2Hz < 8Hz) and subdued arousal (0.19 < 0.35) with cybercrime intent activated Semantic Floor override, achieving Priority-1 (U >= 0.85) and staging S4 CFCFRMS lien."
+    },
+    "scenario_2_performative_screaming_yelling": {
+      "scenario_id": 2,
+      "name": "Performative Screaming / Yelling",
+      "status": "PASSED",
+      "passed": true,
+      "execution_time_ms": 0.067,
+      "target_urgency_max": 0.45,
+      "measured_urgency": 0.41,
+      "badge": "AGITATED - NON-CRITICAL (ROUTINE)",
+      "state": "S2_ACOUSTIC_LEXICAL_SURVEILLANCE",
+      "performative_flag": true,
+      "p_freeze": 0.0,
+      "cfcfrms_lien_blocked": true,
+      "parameters": {
+        "arousal": 0.84,
+        "jitter_pct": 1.1,
+        "s_semantic": 0.0,
+        "override_active": false,
+        "matched_keywords": []
+      },
+      "details": "Performative screaming with high arousal (0.84 > 0.75) but normal autonomic vocal jitter (1.1% < 2.2%) and zero cybercrime intent was strictly capped at Routine (U = 0.41 <= 0.45)."
+    },
+    "scenario_3_synthetic_deepfake_spoof": {
+      "scenario_id": 3,
+      "name": "Synthetic Deepfake Spoof",
+      "status": "PASSED",
+      "passed": true,
+      "execution_time_ms": 8.82,
+      "target_urgency": 0.15,
+      "measured_urgency": 0.15,
+      "badge": "SYNTHETIC SPOOF - BLOCKED",
+      "state": "S2_ACOUSTIC_LEXICAL_SURVEILLANCE",
+      "spoof_flag": true,
+      "spoof_prob": 0.94,
+      "queue_escalation_blocked": true,
+      "parameters": {
+        "aasist_spoof_prob": 0.94,
+        "threshold": 0.7,
+        "s_semantic": 0.95,
+        "override_attempted": true
+      },
+      "details": "AASIST-L detected synthetic neural vocoder phase regularity (P_spoof = 0.94 > 0.70). Late fusion immediately clamped urgency to 0.15, blocked priority escalation, and suppressed lien generation."
+    },
+    "scenario_4_frontier1_scammer_coercion": {
+      "scenario_id": 4,
+      "name": "Frontier 1 Scammer-in-the-Background Coercion",
+      "status": "PASSED",
+      "passed": true,
+      "execution_time_ms": 1.275,
+      "coercion_detected": true,
+      "is_coached_pause": true,
+      "is_tinny_secondary_source": true,
+      "transducer_ratio": 14.1,
+      "pre_utterance_pause_ms": 1650.0,
+      "primary_hnr_db": 11.0,
+      "negative_control_passed": true,
+      "parameters": {
+        "transducer_cutoff_hz": 280.0,
+        "coached_pause_window_ms": [
+          1100.0,
+          2400.0
+        ],
+        "transducer_ratio_threshold": 3.8
+      },
+      "details": "Detected secondary laptop transducer roll-off (<280Hz, energy ratio 14.1 > 3.8) combined with bimodal coaching turn-taking pause (1650.0ms in [1100, 2400]ms), flagging background scammer coercion."
+    },
+    "scenario_5_silent_shadow_mode_statistical_gates": {
+      "scenario_id": 5,
+      "name": "Silent Shadow Mode Statistical Gates",
+      "status": "PASSED",
+      "passed": true,
+      "execution_time_ms": 40.453,
+      "cohort_size": 200,
+      "metrics": {
+        "total_calls_evaluated": 200,
+        "golden_hour_fraud_recall_pct": 96.0,
+        "golden_hour_recall_gate_target_min": 94.0,
+        "golden_hour_gate_passed": true,
+        "false_positive_rate_pct": 6.0,
+        "fpr_gate_target_max": 8.5,
+        "fpr_gate_passed": true,
+        "mean_lead_time_advantage_sec": 125.7,
+        "lead_time_gate_target_min": 110.0,
+        "lead_time_gate_passed": true,
+        "production_readiness_status": "GRADUATION_APPROVED_READY_FOR_INDICATIVE_UI"
+      },
+      "baseline_reference_passed": true,
+      "details": "Simulated cohort of 200 calls verified all 3 statutory production gates: Golden-Hour Recall = 96.0% (>=94.0%), False Positive Rate = 6.0% (<=8.5%), and Mean Lead-Time Advantage = 125.7s (>=110.0s), earning GRADUATION_APPROVED_READY_FOR_INDICATIVE_UI certification."
+    }
+  }
+}

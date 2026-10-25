@@ -30,11 +30,14 @@ class FastAcousticBiomarkerExtractor:
         rms = float(np.sqrt(np.mean(audio_16k ** 2) + 1e-9))
 
         # 2. Autocorrelation-based F0 estimation (in normal human speech band 75Hz - 450Hz)
+        # Optimized via FFT-based Wiener-Khinchin theorem: O(N log N) vs O(N^2)
         min_lag = int(self.sample_rate / 450.0)  # ~35
         max_lag = int(self.sample_rate / 75.0)   # ~213
 
-        corr = np.correlate(audio_16k, audio_16k, mode='full')
-        corr = corr[len(corr) // 2:]
+        n = len(audio_16k)
+        n_fft = 2 ** int(np.ceil(np.log2(2 * n - 1)))
+        fx = np.fft.rfft(audio_16k, n=n_fft)
+        corr = np.fft.irfft(fx.real**2 + fx.imag**2, n=n_fft)[:n]
 
         if max_lag < len(corr):
             lag_slice = corr[min_lag:max_lag]

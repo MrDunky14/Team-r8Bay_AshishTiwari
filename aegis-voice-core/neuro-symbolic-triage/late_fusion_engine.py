@@ -38,18 +38,26 @@ def compute_multimodal_triage(
     """
     Evaluates multimodal inputs and produces real-time urgency, badge, and CFCFRMS payload.
     """
+    # 0. Compute Composite Acoustic Panic Score via 3D VAD coordinates
+    # Phi_VAD = A * (1 - V) * (1 - D)
+    phi_vad = arousal * (1.0 - valence) * (1.0 - dominance)
+    s_acoustic = min(1.0, (0.65 * arousal) + (0.35 * phi_vad))
+
     # 1. Edge Case 3: Synthetic Deepfake Gate (AASIST-L)
     if spoof_prob > 0.70:
         return {
             "urgency_score": 0.15,
+            "confidence_interval": 0.04,
             "badge": "SYNTHETIC SPOOF - BLOCKED",
-            "state": "S2_ACOUSTIC_LEXICAL_SURVEILLANCE",
             "shock_paralysis_flag": False,
             "spoof_flag": True,
             "performative_flag": False,
             "p_freeze": 0.0,
-            "confidence_interval": 0.04,
+            "state": "S2_ACOUSTIC_LEXICAL_SURVEILLANCE",
             "cfcfrms_lien_draft": None,
+            "phi_vad": round(phi_vad, 3),
+            "s_acoustic": round(s_acoustic, 3),
+            "s_semantic": round(s_semantic, 3),
             "evidentiary_status": "NON_EVIDENTIARY_DECISION_SUPPORT_ONLY_EXEMPT_FROM_CHARGE_SHEET"
         }
 
@@ -58,36 +66,37 @@ def compute_multimodal_triage(
     if arousal > 0.75 and jitter_pct < 2.2 and s_semantic == 0.0:
         return {
             "urgency_score": 0.41,
+            "confidence_interval": 0.05,
             "badge": "AGITATED - NON-CRITICAL (ROUTINE)",
-            "state": "S2_ACOUSTIC_LEXICAL_SURVEILLANCE",
             "shock_paralysis_flag": False,
             "spoof_flag": False,
             "performative_flag": True,
             "p_freeze": 0.0,
-            "confidence_interval": 0.05,
+            "state": "S2_ACOUSTIC_LEXICAL_SURVEILLANCE",
             "cfcfrms_lien_draft": None,
+            "phi_vad": round(phi_vad, 3),
+            "s_acoustic": round(s_acoustic, 3),
+            "s_semantic": round(s_semantic, 3),
             "evidentiary_status": "NON_EVIDENTIARY_DECISION_SUPPORT_ONLY_EXEMPT_FROM_CHARGE_SHEET"
         }
 
-    # 3. Compute Composite Acoustic Panic Score via 3D VAD coordinates
-    # Phi_VAD = A * (1 - V) * (1 - D)
-    phi_vad = arousal * (1.0 - valence) * (1.0 - dominance)
-    s_acoustic = min(1.0, (0.65 * arousal) + (0.35 * phi_vad))
-
-    # 4. Architecture B Late-Fusion Formula:
+    # 3. Architecture B Late-Fusion Formula:
     # U(t) = min(1.0, 0.35*S_ac + 0.45*S_sem + 0.30*(S_ac * S_sem) + 0.65*I_override)
     alpha, beta, gamma, delta = 0.35, 0.45, 0.30, 0.65
     i_override = 1.0 if override_active else 0.0
 
-    u_score = min(
-        1.0,
-        (alpha * s_acoustic)
-        + (beta * s_semantic)
-        + (gamma * s_acoustic * s_semantic)
-        + (delta * i_override)
+    u_score = max(
+        0.0,
+        min(
+            1.0,
+            (alpha * s_acoustic)
+            + (beta * s_semantic)
+            + (gamma * s_acoustic * s_semantic)
+            + (delta * i_override)
+        )
     )
 
-    # 5. Edge Case 1: Stoic Victim / Shock Paralysis Detection
+    # 4. Edge Case 1: Stoic Victim / Shock Paralysis Detection
     # Override active (e.g. ₹12L Digital Arrest transfer) + flat pitch variance (<8Hz) + subdued arousal (<0.35)
     shock_paralysis = bool(override_active and sigma_f0_hz < 8.0 and arousal < 0.35)
     
@@ -101,21 +110,22 @@ def compute_multimodal_triage(
     else:
         badge = "STANDARD QUEUE"
 
-    # 6. Frontier 3: Golden Hour Interdiction Decay & Neuro-Symbolic State Transition
+    # 5. Frontier 3: Golden Hour Interdiction Decay & Neuro-Symbolic State Transition
     lam = RAIL_DECAY_CONSTANTS.get(detected_rail, 0.035)
     p_freeze = math.exp(-lam * elapsed_txn_minutes)
 
+    threat_vectors = matched_keywords
     state = "S2_ACOUSTIC_LEXICAL_SURVEILLANCE"
     cfcfrms_payload = None
 
-    if (phi_vad > 0.30 or override_active) and p_freeze >= 0.50:
+    if (override_active or (phi_vad > 0.30 and s_semantic > 0.0) or len(threat_vectors) > 0) and p_freeze >= 0.50:
         state = "S4_LIEN_PAYLOAD_STAGED"
         cfcfrms_payload = build_cfcfrms_jsonld(
             call_uuid=call_uuid,
             payment_rail=detected_rail,
             p_freeze=p_freeze,
             elapsed_minutes=elapsed_txn_minutes,
-            threat_vectors=matched_keywords,
+            threat_vectors=threat_vectors,
             urgency_score=u_score,
             victim_state="SHOCK_PARALYSIS" if shock_paralysis else "ACUTE_PANIC"
         )
