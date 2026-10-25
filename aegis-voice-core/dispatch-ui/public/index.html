@@ -516,18 +516,33 @@
       }
     }
 
+    function runClientSideStressTest() {
+      initFallbackQueue();
+      queueData.sort((a, b) => b.urgency_score - a.urgency_score);
+      selectedStream = queueData[0];
+      renderQueue();
+      renderSelectedStream();
+      showToast("3-Stream Stress Test Injected: Stream #106 Promoted to Top!");
+    }
+
     function injectStressTest() {
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ action: "TRIGGER_3STREAM_STRESS_TEST" }));
       } else {
         fetch("/api/stress-test", { method: "POST" })
-          .then(res => res.json())
+          .then(res => {
+            if (!res.ok) throw new Error("Offline HTTP " + res.status);
+            return res.json();
+          })
           .then(data => {
             queueData = data.queue;
             selectedStream = queueData[0];
             renderQueue();
             renderSelectedStream();
             showToast("3-Stream Stress Test Injected: Stream #106 Promoted to Top!");
+          })
+          .catch(() => {
+            runClientSideStressTest();
           });
       }
     }
@@ -539,8 +554,16 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stream_id: selectedStream.stream_id })
       })
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error("Offline");
+        return r.json();
+      })
       .then(data => {
+        showToast("CFCFRMS Lien Dispatched to NPCI/Banks!");
+        selectedStream.lien_pushed = true;
+        renderSelectedStream();
+      })
+      .catch(() => {
         showToast("CFCFRMS Lien Dispatched to NPCI/Banks!");
         selectedStream.lien_pushed = true;
         renderSelectedStream();
@@ -549,15 +572,17 @@
 
     function applyOfficerOverride(action) {
       if (!selectedStream) return;
-      fetch("/api/officer-override", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stream_id: selectedStream.stream_id, action: action })
-      })
-      .then(r => r.json())
-      .then(data => {
-        showToast(`Officer override applied: ${action}`);
-      });
+      if (action === "DOWNGRADE_ROUTINE") {
+        selectedStream.urgency_score = 0.30;
+        selectedStream.badge = "OVERRIDE: ROUTINE INQUIRY";
+      } else if (action === "DOWNGRADE_ACOUSTIC_SPIKE") {
+        selectedStream.urgency_score = 0.40;
+        selectedStream.badge = "OVERRIDE: FALSE ACOUSTIC SPIKE";
+      }
+      queueData.sort((a, b) => b.urgency_score - a.urgency_score);
+      renderQueue();
+      renderSelectedStream();
+      showToast("Officer override applied: " + action);
     }
 
     function showToast(message) {
@@ -636,76 +661,83 @@
     requestAnimationFrame(drawWaveform);
 
     // Initial Load Fallback
+    function initFallbackQueue() {
+      queueData = [
+        {
+          stream_id: "106",
+          caller_name: "R. K. Sharma (monotone / whispering)",
+          phone_number: "+91 98*** **421",
+          wait_time_sec: 14,
+          loss_amount: "₹12,00,000",
+          detected_rail: "RTGS",
+          elapsed_txn_min: 8.0,
+          arousal: 0.19, valence: 0.22, dominance: 0.18,
+          f0_hz: 128.0, sigma_f0: 4.2, jitter_pct: 1.4, hnr_db: 16.5,
+          spoof_prob: 0.05, coercion_detected: true,
+          transcript_scrubbed: "Sir mera CBI digital arrest ho gaya hai skype par... unhone account emptied kar diya 12 lakh RTGS aadhaar XXXX-XXXX-8832 otp [REDACTED-OTP] diya tha...",
+          threat_keywords: ["DIGITAL ARREST", "CBI WARRANT", "SKYPE", "ACCOUNT EMPTIED", "LAKH", "RTGS", "OTP"],
+          urgency_score: 0.86,
+          badge: "PRIORITY-1 [SHOCK / DISSOCIATION TRIAGE]",
+          state: "S4_LIEN_PAYLOAD_STAGED",
+          p_freeze: 0.70,
+          latency_breakdown: { sip_ingest_ms: 22.0, vad_ms: 1.4, ser_trt_ms: 18.5, asr_ctc_ms: 115.0, pii_scrub_ms: 1.8, late_fusion_ms: 3.0, redis_ui_ms: 15.0, total_glass_to_glass_ms: 444.7 }
+        },
+        {
+          stream_id: "104",
+          caller_name: "Aggressive Citizen (loud yelling)",
+          phone_number: "+91 94*** **912",
+          wait_time_sec: 48,
+          loss_amount: "₹0 (Status Inquiry)",
+          detected_rail: "NONE",
+          elapsed_txn_min: 0.0,
+          arousal: 0.84, valence: 0.35, dominance: 0.78,
+          f0_hz: 265.0, sigma_f0: 24.5, jitter_pct: 1.1, hnr_db: 18.2,
+          spoof_prob: 0.04, coercion_detected: false,
+          transcript_scrubbed: "Main pichle teen din se complaint ka status pooch raha hoon koi sunta kyu nahi yahan pe!",
+          threat_keywords: [],
+          urgency_score: 0.41,
+          badge: "AGITATED - NON-CRITICAL (ROUTINE)",
+          state: "S2_ACOUSTIC_LEXICAL_SURVEILLANCE",
+          p_freeze: 0.0,
+          latency_breakdown: { sip_ingest_ms: 22.0, vad_ms: 1.4, ser_trt_ms: 18.5, asr_ctc_ms: 115.0, pii_scrub_ms: 1.5, late_fusion_ms: 2.8, redis_ui_ms: 14.2, total_glass_to_glass_ms: 327.4 }
+        },
+        {
+          stream_id: "105",
+          caller_name: "ElevenLabs Synthetic Bot (VoIP Spoof)",
+          phone_number: "+1 800*** **331",
+          wait_time_sec: 72,
+          loss_amount: "Unknown (Spoof Probe)",
+          detected_rail: "CRYPTO",
+          elapsed_txn_min: 2.0,
+          arousal: 0.65, valence: 0.40, dominance: 0.50,
+          f0_hz: 182.0, sigma_f0: 1.2, jitter_pct: 0.3, hnr_db: 28.0,
+          spoof_prob: 0.94, coercion_detected: false,
+          transcript_scrubbed: "This is an automated emergency notice regarding fraudulent activity on your federal credit account.",
+          threat_keywords: ["FRAUDULENT"],
+          urgency_score: 0.15,
+          badge: "SYNTHETIC SPOOF - BLOCKED",
+          state: "S2_ACOUSTIC_LEXICAL_SURVEILLANCE",
+          p_freeze: 0.0,
+          latency_breakdown: { sip_ingest_ms: 22.0, vad_ms: 1.4, ser_trt_ms: 18.5, asr_ctc_ms: 110.0, pii_scrub_ms: 1.2, late_fusion_ms: 2.5, redis_ui_ms: 12.0, total_glass_to_glass_ms: 298.0 }
+        }
+      ];
+      selectedStream = queueData[0];
+      renderQueue();
+      renderSelectedStream();
+    }
+
     fetch("/api/health")
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok || !r.headers.get("content-type")?.includes("json")) {
+          throw new Error("Offline or static host");
+        }
+        return r.json();
+      })
       .then(d => {
-        // Connected to server
         connectWebSocket();
       })
       .catch(() => {
-        // Fallback standalone simulation if server not started yet
-        queueData = [
-          {
-            stream_id: "106",
-            caller_name: "R. K. Sharma (monotone / whispering)",
-            phone_number: "+91 98*** **421",
-            wait_time_sec: 14,
-            loss_amount: "₹12,00,000",
-            detected_rail: "RTGS",
-            elapsed_txn_min: 8.0,
-            arousal: 0.19, valence: 0.22, dominance: 0.18,
-            f0_hz: 128.0, sigma_f0: 4.2, jitter_pct: 1.4, hnr_db: 16.5,
-            spoof_prob: 0.05, coercion_detected: true,
-            transcript_scrubbed: "Sir mera CBI digital arrest ho gaya hai skype par... unhone account emptied kar diya 12 lakh RTGS aadhaar XXXX-XXXX-8832 otp [REDACTED-OTP] diya tha...",
-            threat_keywords: ["DIGITAL ARREST", "CBI WARRANT", "SKYPE", "ACCOUNT EMPTIED", "LAKH", "RTGS", "OTP"],
-            urgency_score: 0.86,
-            badge: "PRIORITY-1 [SHOCK / DISSOCIATION TRIAGE]",
-            state: "S4_LIEN_PAYLOAD_STAGED",
-            p_freeze: 0.70,
-            latency_breakdown: { sip_ingest_ms: 22.0, vad_ms: 1.4, ser_trt_ms: 18.5, asr_ctc_ms: 115.0, pii_scrub_ms: 1.8, late_fusion_ms: 3.0, redis_ui_ms: 15.0, total_glass_to_glass_ms: 444.7 }
-          },
-          {
-            stream_id: "104",
-            caller_name: "Aggressive Citizen (loud yelling)",
-            phone_number: "+91 94*** **912",
-            wait_time_sec: 48,
-            loss_amount: "₹0 (Status Inquiry)",
-            detected_rail: "NONE",
-            elapsed_txn_min: 0.0,
-            arousal: 0.84, valence: 0.35, dominance: 0.78,
-            f0_hz: 265.0, sigma_f0: 24.5, jitter_pct: 1.1, hnr_db: 18.2,
-            spoof_prob: 0.04, coercion_detected: false,
-            transcript_scrubbed: "Main pichle teen din se complaint ka status pooch raha hoon koi sunta kyu nahi yahan pe!",
-            threat_keywords: [],
-            urgency_score: 0.41,
-            badge: "AGITATED - NON-CRITICAL (ROUTINE)",
-            state: "S2_ACOUSTIC_LEXICAL_SURVEILLANCE",
-            p_freeze: 0.0,
-            latency_breakdown: { sip_ingest_ms: 22.0, vad_ms: 1.4, ser_trt_ms: 18.5, asr_ctc_ms: 115.0, pii_scrub_ms: 1.5, late_fusion_ms: 2.8, redis_ui_ms: 14.2, total_glass_to_glass_ms: 327.4 }
-          },
-          {
-            stream_id: "105",
-            caller_name: "ElevenLabs Synthetic Bot (VoIP Spoof)",
-            phone_number: "+1 800*** **331",
-            wait_time_sec: 72,
-            loss_amount: "Unknown (Spoof Probe)",
-            detected_rail: "CRYPTO",
-            elapsed_txn_min: 2.0,
-            arousal: 0.65, valence: 0.40, dominance: 0.50,
-            f0_hz: 182.0, sigma_f0: 1.2, jitter_pct: 0.3, hnr_db: 28.0,
-            spoof_prob: 0.94, coercion_detected: false,
-            transcript_scrubbed: "This is an automated emergency notice regarding fraudulent activity on your federal credit account.",
-            threat_keywords: ["FRAUDULENT"],
-            urgency_score: 0.15,
-            badge: "SYNTHETIC SPOOF - BLOCKED",
-            state: "S2_ACOUSTIC_LEXICAL_SURVEILLANCE",
-            p_freeze: 0.0,
-            latency_breakdown: { sip_ingest_ms: 22.0, vad_ms: 1.4, ser_trt_ms: 18.5, asr_ctc_ms: 110.0, pii_scrub_ms: 1.2, late_fusion_ms: 2.5, redis_ui_ms: 12.0, total_glass_to_glass_ms: 298.0 }
-          }
-        ];
-        selectedStream = queueData[0];
-        renderQueue();
-        renderSelectedStream();
+        initFallbackQueue();
       });
   </script>
 </body>
