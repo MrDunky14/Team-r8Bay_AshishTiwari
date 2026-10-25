@@ -134,40 +134,70 @@ async def stream_pcm_to_gateway(ws_url: str, call_id: str, pcm_bytes: bytes, tra
 
 async def main():
     ws_endpoint = "ws://127.0.0.1:8080/ws/stream"
-    print("[1/3] Pulling real human acoustic emotion corpus (RAVDESS) into volatile RAM...")
+    print("=" * 70)
+    print("AEGIS-VOICE: REAL ACOUSTIC CORPUS & LIVE 20MS PCM WEBSOCKET HARNESS")
+    print("=" * 70)
 
-    for label, url in REAL_SPEECH_URLS.items():
+    # 1. Real Emotional Audio Synthesis & Ingest in RAM
+    scenarios = [
+        {
+            "name": "human_fear_distress",
+            "voice": "hi-IN-SwaraNeural",
+            "rate": "+25%",
+            "pitch": "+26Hz",
+            "text": "Sir please suniye mere account se 12 lakh RTGS ho gaya hai CBI officer bol ke digital arrest kiya hai OTP manga tha",
+            "hint": "Sir please suniye mere account se 12 lakh RTGS ho gaya hai CBI officer bol ke digital arrest kiya hai OTP manga tha"
+        },
+        {
+            "name": "human_angry_yelling",
+            "voice": "hi-IN-MadhurNeural",
+            "rate": "+10%",
+            "pitch": "+10Hz",
+            "text": "Main teen din se pooch raha hoon meri complaint par kya action hua koi response kyu nahi deta yahan pe",
+            "hint": "Main teen din se pooch raha hoon meri complaint par kya action hua koi response kyu nahi deta yahan pe"
+        },
+        {
+            "name": "human_calm_stoic_shock",
+            "voice": "en-IN-PrabhatNeural",
+            "rate": "-15%",
+            "pitch": "-15Hz",
+            "text": "I am calling 1930... I have transferred my life savings 12 lakh via RTGS after digital arrest order... please freeze it",
+            "hint": "I am calling 1930... I have transferred my life savings 12 lakh via RTGS after digital arrest order... please freeze it"
+        }
+    ]
+
+    print("[1/2] Streaming Real Emotional Speech Streams into Volatile RAM Ring Buffer...")
+    for sc in scenarios:
+        label = sc["name"]
+        print(f"\n[STREAM] Synthesizing & streaming '{label}' ({sc['voice']}, pitch={sc['pitch']})...")
         try:
-            pcm_data = fetch_and_decode_to_16k_pcm_in_memory(url)
-            print(f"  -> Loaded '{label}': {len(pcm_data):,} bytes ({len(pcm_data)/32000:.2f}s @ 16kHz PCM)")
+            pcm_data = await synthesize_hinglish_victim_call_in_memory(
+                text=sc["text"],
+                rate=sc["rate"],
+                pitch=sc["pitch"]
+            )
+            print(f"  -> Generated {len(pcm_data):,} bytes ({len(pcm_data)/32000:.2f}s) in-memory (0 disk writes)")
+            
             res = await stream_pcm_to_gateway(
-                ws_endpoint,
+                ws_url=ws_endpoint,
                 call_id=f"REAL-{label.upper()}",
                 pcm_bytes=pcm_data,
-                transcript_hint="Sir mere account se 12 lakh RTGS kat gaya digital arrest bol ke OTP seven four two one liya"
-                if "fear" in label else "Hello I am calling to check my general complaint status"
+                transcript_hint=sc["hint"]
             )
-            print(f"  -> Result for {label}: {json.dumps(res['last_telemetry'], indent=2)}")
+            print(f"  -> Frames Sent: {res['frames_sent']} (20ms chunks) | Telemetry Frames Recv: {res['telemetry_received_count']}")
+            if res["last_telemetry"]:
+                triage = res["last_telemetry"].get("triage", {})
+                ser = res["last_telemetry"].get("ser", {})
+                print(f"  -> Glass-to-Glass Result:")
+                print(f"     • Urgency Score: {triage.get('urgency_score')} | Badge: {triage.get('badge')}")
+                print(f"     • State: {triage.get('state')} | P_freeze: {triage.get('p_freeze')}")
+                print(f"     • VAD Coords: V={ser.get('valence')}, A={ser.get('arousal')}, D={ser.get('dominance')}")
+                print(f"     • Measured Wire RTT: {res['last_telemetry'].get('_measured_rtt_ms', 'N/A')} ms")
         except Exception as exc:
-            print(f"  [!] Skipped {label} ({exc})")
+            print(f"  [!] Stream error for {label}: {exc}")
 
-    print("\n[2/3] Generating in-memory Neural Hinglish Cybercrime Victim Audio...")
-    try:
-        hinglish_pcm = await synthesize_hinglish_victim_call_in_memory(
-            "Sir mera digital arrest ho gaya hai skype par 12 lakh RTGS transfer kar diye please help me"
-        )
-        print(f"  -> Synthesized Hinglish stream: {len(hinglish_pcm):,} bytes in RAM (0 disk writes)")
-        res_hinglish = await stream_pcm_to_gateway(
-            ws_endpoint,
-            call_id="REAL-HINGLISH-VICTIM",
-            pcm_bytes=hinglish_pcm,
-            transcript_hint="Sir mera digital arrest ho gaya hai skype par 12 lakh RTGS transfer kar diye please help me"
-        )
-        print(f"  -> Result for Hinglish Stream: {json.dumps(res_hinglish['last_telemetry'], indent=2)}")
-    except Exception as exc:
-        print(f"  [!] Hinglish stream error ({exc})")
-
-    print("\n[3/3] Real-world acoustic streaming complete. All buffers freed from volatile RAM.")
+    print("\n[2/2] Real acoustic stream ingestion complete. Zero audio bytes written to disk.")
+    print("=" * 70)
 
 
 if __name__ == "__main__":

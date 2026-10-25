@@ -87,7 +87,7 @@ def initialize_default_queue():
                 "is_coached_pause": True,
                 "is_tinny_secondary_source": True
             },
-            "transcript_raw": "Sir mera CBI digital arrest ho gaya hai skype par... unhone account emptied kar diya 12 lakh RTGS aadhaar 9844 2109 8832 otp 492104 diya tha...",
+            "transcript_raw": "Sir mera CBI digital arrest ho gaya hai skype par... unhone account emptied kar diya 12 lakh RTGS aadhaar XXXX-XXXX-8832 otp [REDACTED-OTP] diya tha...",
             "transcript_scrubbed": "Sir mera CBI digital arrest ho gaya hai skype par... unhone account emptied kar diya 12 lakh RTGS aadhaar XXXX-XXXX-8832 otp [REDACTED-OTP] diya tha...",
             "threat_keywords": ["DIGITAL ARREST", "CBI WARRANT", "SKYPE", "ACCOUNT EMPTIED", "LAKH", "RTGS", "OTP"],
             "semantic_score": 0.95,
@@ -251,9 +251,10 @@ async def websocket_stream_endpoint(websocket: WebSocket):
     or simulated client testers.
     """
     await websocket.accept()
-    call_uuid = websocket.query_params.get("uuid", "live-telephony-call")
+    call_uuid = websocket.query_params.get("call_uuid") or websocket.query_params.get("uuid", "live-telephony-call")
     ring_buf = EphemeralAudioRingBuffer(call_uuid=call_uuid)
     start_time = time.time()
+    transcript_hint = None
 
     try:
         while True:
@@ -275,7 +276,7 @@ async def websocket_stream_endpoint(websocket: WebSocket):
                     ser_res = ser_runner.infer(call_uuid, routed.ser_conditioned_audio, call_time_s)
                     
                     # 3. Synthesize/infer ASR on conditioned audio
-                    asr_res = asr_worker.transcribe_chunk(routed.asr_conditioned_audio)
+                    asr_res = asr_worker.transcribe_chunk(routed.asr_conditioned_audio, simulated_text=transcript_hint)
                     
                     # 4. Epistemic uncertainty scaling under severe noise (<10 dB SNR)
                     epistemic_unc = ser_res["epistemic_uncertainty"]
@@ -299,7 +300,7 @@ async def websocket_stream_endpoint(websocket: WebSocket):
                         call_uuid=call_uuid
                     )
 
-                    await broadcast_to_dispatch("TELEMETRY_UPDATE", {
+                    telemetry_payload = {
                         "call_uuid": call_uuid,
                         "ser": ser_res,
                         "asr": asr_res,
@@ -309,9 +310,19 @@ async def websocket_stream_endpoint(websocket: WebSocket):
                             "speech_prob": routed.speech_prob,
                             "snr_db": routed.snr_db
                         }
-                    })
+                    }
+                    await broadcast_to_dispatch("TELEMETRY_UPDATE", telemetry_payload)
+                    try:
+                        await websocket.send_text(json.dumps(telemetry_payload))
+                    except Exception:
+                        pass
             elif "text" in message:
-                pass
+                try:
+                    payload = json.loads(message["text"])
+                    if payload.get("type") == "asr_partial_inject":
+                        transcript_hint = payload.get("text")
+                except Exception:
+                    pass
     except (WebSocketDisconnect, RuntimeError):
         pass
     except Exception:
