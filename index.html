@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Aegis-Voice: National Cybercrime Triage & 1930 Emergency Dispatch Console</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #06090F;
+      color: #E2E8F0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .pulse-glow-red {
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+      animation: pulseRed 1.8s infinite ease-in-out;
+    }
+    .pulse-glow-green {
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.35);
+      animation: pulseGreen 2s infinite ease-in-out;
+    }
+    @keyframes pulseRed {
+      0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); border-color: rgba(239, 68, 68, 0.8); }
+      50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.7); border-color: rgba(239, 68, 68, 1); }
+    }
+    @keyframes pulseGreen {
+      0%, 100% { box-shadow: 0 0 10px rgba(34, 197, 94, 0.25); }
+      50% { box-shadow: 0 0 22px rgba(34, 197, 94, 0.6); }
+    }
+    .panel-dark {
+      background: #0B101D;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .panel-dark:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #06090F; }
+    ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col overflow-x-hidden">
+
+  <!-- ================= TOP HEADER: LATENCY PROFILER (SLIDE 2 PROOF) ================= -->
+  <header class="bg-[#090D18] border-b border-slate-800 px-5 py-3 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-50 shadow-2xl">
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center font-black text-white text-lg tracking-wider shadow-lg shadow-cyan-900/40">
+        🛡️
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <h1 class="text-base font-extrabold tracking-wide text-white flex items-center gap-2">
+            AEGIS-VOICE <span class="text-xs px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 font-bold border border-cyan-800/60">v2.0 PROD-LOCK</span>
+          </h1>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-800/80">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-ping"></span> Live 1930 Shadow Mode
+          </span>
+        </div>
+        <p class="text-[11px] text-slate-400">Indian Cyber Crime Coordination Centre (I4C) • Dual-Stream Telephony Triage</p>
+      </div>
+    </div>
+
+    <!-- Live Glass-to-Glass Latency Breakdown Pills -->
+    <div class="flex items-center gap-2 overflow-x-auto py-1">
+      <div class="flex items-center bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1.5 mono text-[11px]">
+        <span class="text-slate-400 mr-1.5">SIP/PCM Ingest:</span>
+        <span class="text-cyan-400 font-bold" id="lat-sip">22.0ms</span>
+      </div>
+      <span class="text-slate-600 text-xs">→</span>
+      <div class="flex items-center bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1.5 mono text-[11px]">
+        <span class="text-slate-400 mr-1.5">Silero VAD:</span>
+        <span class="text-cyan-400 font-bold" id="lat-vad">1.4ms</span>
+      </div>
+      <span class="text-slate-600 text-xs">→</span>
+      <div class="flex items-center bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1.5 mono text-[11px]">
+        <span class="text-slate-400 mr-1.5">emotion2vec+ TRT:</span>
+        <span class="text-purple-400 font-bold" id="lat-ser">18.5ms</span>
+      </div>
+      <span class="text-slate-600 text-xs">→</span>
+      <div class="flex items-center bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1.5 mono text-[11px]">
+        <span class="text-slate-400 mr-1.5">IndicConformer CTC + PII:</span>
+        <span class="text-amber-400 font-bold" id="lat-asr">116.8ms</span>
+      </div>
+      <span class="text-slate-600 text-xs">→</span>
+      <div class="flex items-center bg-emerald-950/80 border border-emerald-600/80 rounded-lg px-3 py-1.5 mono text-[11px] shadow-lg shadow-emerald-950/50">
+        <span class="text-emerald-300 font-bold mr-1.5">Total Glass-to-Glass:</span>
+        <span class="text-emerald-400 font-black text-xs" id="lat-total">444.7ms</span>
+        <span class="text-[10px] text-emerald-400/80 ml-1.5">(SLA &lt;800ms)</span>
+      </div>
+    </div>
+
+    <!-- Right Quick Controls -->
+    <div class="flex items-center space-x-2">
+      <button onclick="injectStressTest()" class="px-3.5 py-2 rounded-lg bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs font-bold shadow-lg shadow-red-900/40 flex items-center gap-1.5 border border-red-400/30 active:scale-95 transition-all">
+        <span class="animate-pulse">⚡</span> Inject 3-Stream Stress Test
+      </button>
+      <div class="text-right pl-2 hidden sm:block">
+        <div class="text-[10px] text-slate-400 mono">DPDP ACT: <span class="text-emerald-400 font-bold">ZERO-DISK RAM</span></div>
+        <div class="text-[10px] text-slate-500 mono">Volatile Ring: <span class="text-cyan-400">75 frames (1.5s)</span></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= 3-COLUMN OPERATOR DISPATCH CONSOLE ================= -->
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 p-3 overflow-hidden">
+
+    <!-- ========== LEFT COLUMN: 3-STREAM LIVE QUEUE SIMULATOR (SLIDE 3 PROOF) ========== -->
+    <section class="lg:col-span-4 flex flex-col space-y-3">
+      <div class="panel-dark rounded-xl p-3 flex-1 flex flex-col shadow-xl">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+            <h2 class="text-xs font-extrabold tracking-wider text-slate-200 uppercase">1930 Live Queue Re-Ranker</h2>
+          </div>
+          <span class="text-[11px] mono text-slate-400">Sorted by Multimodal Urgency $U(t)$</span>
+        </div>
+
+        <p class="text-[11px] text-slate-400 mt-2 mb-2">
+          Real-time dynamic re-ranking. Stoic shock victims auto-promoted over loud non-urgent callers; synthetic deepfake bots blocked.
+        </p>
+
+        <!-- Dynamic Queue Cards Container -->
+        <div id="queue-container" class="space-y-2.5 flex-1 overflow-y-auto pr-1">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Silent Shadow Mode Statistics Footer -->
+        <div class="mt-3 pt-2.5 border-t border-slate-800/80 bg-slate-950/60 rounded-lg p-2.5">
+          <div class="text-[11px] font-bold text-slate-300 mb-1 flex items-center justify-between">
+            <span>30-Day Shadow Mode Validation</span>
+            <span class="text-emerald-400 mono text-[10px]">ALL GATES PASSED</span>
+          </div>
+          <div class="grid grid-cols-3 gap-1.5 text-center mono text-[10px]">
+            <div class="bg-slate-900 p-1.5 rounded border border-slate-800">
+              <div class="text-slate-400">Fraud Recall</div>
+              <div class="text-emerald-400 font-bold text-xs" id="shadow-recall">95.8%</div>
+              <div class="text-[9px] text-slate-500">Target &ge;94%</div>
+            </div>
+            <div class="bg-slate-900 p-1.5 rounded border border-slate-800">
+              <div class="text-slate-400">False Positives</div>
+              <div class="text-cyan-400 font-bold text-xs" id="shadow-fpr">6.9%</div>
+              <div class="text-[9px] text-slate-500">Target &le;8.5%</div>
+            </div>
+            <div class="bg-slate-900 p-1.5 rounded border border-slate-800">
+              <div class="text-slate-400">Lead Advantage</div>
+              <div class="text-purple-400 font-bold text-xs" id="shadow-lead">+124.6s</div>
+              <div class="text-[9px] text-slate-500">Target &ge;110s</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== CENTER COLUMN: DUAL-PARTY COERCION SPECTROGRAM & TRANSCRIPT (SLIDE 4 PROOF) ========== -->
+    <section class="lg:col-span-5 flex flex-col space-y-3">
+      
+      <!-- Pulsing Coercion Alert Banner (Illuminated for Stream #106) -->
+      <div id="coercion-banner" class="pulse-glow-red bg-red-950/90 border border-red-500/80 rounded-xl p-3 flex items-start space-x-3 transition-all duration-300">
+        <div class="text-2xl pt-0.5">⚠️</div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black text-red-200 uppercase tracking-wider flex items-center gap-1.5">
+              <span>COERCION / SECOND-DEVICE COACHING DETECTED</span>
+            </h3>
+            <span class="text-[10px] mono bg-red-900/80 text-red-300 px-2 py-0.5 rounded font-bold">FRONTIER 1 ALERT</span>
+          </div>
+          <p class="text-[11px] text-red-300/90 mt-1">
+            <strong>Signature:</strong> &lt;280Hz Laptop Speakerphone Roll-off + 1.65s Pre-Answer Micro-Pause + Secondary RIR Mismatch.
+          </p>
+          <div class="text-[10px] text-amber-300 font-semibold mt-1 flex items-center gap-1">
+            <span>Suggested Action:</span> Ask out-of-band question: <em>"Sir, are you currently on a video call on another screen?"</em>
+          </div>
+        </div>
+      </div>
+
+      <!-- Real-Time Waveform & 3D VAD Canvas -->
+      <div class="panel-dark rounded-xl p-3 flex-1 flex flex-col shadow-xl">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+          <div class="flex items-center space-x-2">
+            <span class="text-cyan-400 font-mono text-xs">●</span>
+            <h3 class="text-xs font-extrabold text-slate-200 uppercase tracking-wider">Dual-Stream Acoustic Waveform & VAD Trajectory</h3>
+          </div>
+          <div class="flex items-center space-x-3 text-[11px] mono">
+            <span class="text-cyan-400">V: <b id="val-v">0.22</b></span>
+            <span class="text-rose-400">A: <b id="val-a">0.19</b></span>
+            <span class="text-purple-400">D: <b id="val-d">0.18</b></span>
+          </div>
+        </div>
+
+        <!-- HTML5 Canvas 60fps -->
+        <div class="relative w-full h-36 bg-[#04060A] rounded-lg mt-2 overflow-hidden border border-slate-800/80">
+          <canvas id="waveformCanvas" class="w-full h-full block"></canvas>
+          <div class="absolute bottom-1.5 left-2 text-[9px] mono text-slate-500 bg-slate-950/70 px-1.5 py-0.5 rounded">
+            Live FreeSWITCH PCM Hook (16kHz, 16-bit)
+          </div>
+          <div class="absolute top-1.5 right-2 text-[9px] mono text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800">
+            F0: <span class="text-cyan-400 font-bold" id="val-f0">128.0 Hz</span> | Jitter: <span class="text-amber-400" id="val-jitter">1.4%</span> | HNR: <span class="text-emerald-400" id="val-hnr">16.5 dB</span>
+          </div>
+        </div>
+
+        <!-- In-Stream PII Redacted Live Transcript (DPDP Compliance) -->
+        <div class="mt-3 flex-1 flex flex-col">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wide">Live IndicConformer Transcript (In-Stream PII Redacted)</span>
+            <span class="text-[10px] mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/60">&lt;1.8ms RAM Scrub</span>
+          </div>
+          <div id="transcript-box" class="bg-[#050811] p-3 rounded-lg border border-slate-800/80 text-xs mono leading-relaxed flex-1 overflow-y-auto text-slate-300 max-h-36">
+            <!-- Transcript rendered dynamically -->
+          </div>
+          <div class="flex flex-wrap gap-1 mt-2" id="threat-badges">
+            <!-- Threat keywords -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== RIGHT COLUMN: NEURO-SYMBOLIC STATE & CFCFRMS LIEN CARD (SLIDE 5 PROOF) ========== -->
+    <section class="lg:col-span-3 flex flex-col space-y-3">
+      <div class="panel-dark rounded-xl p-3 flex-1 flex flex-col shadow-xl">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+          <h3 class="text-xs font-extrabold text-slate-200 uppercase tracking-wider">Neuro-Symbolic State Machine</h3>
+          <span class="text-[10px] mono text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded border border-cyan-800" id="state-pill">S4_LIEN_PAYLOAD_STAGED</span>
+        </div>
+
+        <!-- Visual 5-Stage State Pipeline -->
+        <div class="grid grid-cols-5 gap-1 my-3 text-[9px] mono font-bold text-center">
+          <div id="state-s0" class="p-1 rounded bg-slate-900 text-slate-500 border border-slate-800">S0 Idle</div>
+          <div id="state-s1" class="p-1 rounded bg-slate-900 text-slate-500 border border-slate-800">S1 3s Calib</div>
+          <div id="state-s2" class="p-1 rounded bg-slate-900 text-slate-500 border border-slate-800">S2 Surveil</div>
+          <div id="state-s3" class="p-1 rounded bg-slate-900 text-slate-500 border border-slate-800">S3 Golden</div>
+          <div id="state-s4" class="p-1 rounded bg-emerald-900/80 text-emerald-300 border border-emerald-500 shadow-md shadow-emerald-950">S4 Staged</div>
+        </div>
+
+        <!-- Golden Hour Interdiction Decay Card -->
+        <div class="bg-slate-950/80 border border-slate-800/90 rounded-lg p-2.5 my-1">
+          <div class="flex justify-between items-center text-[11px] mb-1">
+            <span class="text-slate-400">Payment Rail:</span>
+            <span class="font-bold text-cyan-400 mono text-xs" id="card-rail">RTGS (₹12,00,000)</span>
+          </div>
+          <div class="flex justify-between items-center text-[11px] mb-1">
+            <span class="text-slate-400">Elapsed Txn Time:</span>
+            <span class="font-bold text-amber-400 mono" id="card-elapsed">8.0 mins</span>
+          </div>
+          <div class="flex justify-between items-center text-[11px]">
+            <span class="text-slate-400">Freeze Probability $P_{\text{freeze}}$:</span>
+            <span class="font-bold text-emerald-400 mono text-xs" id="card-pfreeze">0.70 (High)</span>
+          </div>
+          <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+            <div id="pfreeze-bar" class="bg-gradient-to-r from-emerald-500 to-cyan-400 h-full rounded-full" style="width: 70%;"></div>
+          </div>
+        </div>
+
+        <!-- CFCFRMS JSON-LD Lien Pre-Stage Card -->
+        <div class="bg-[#040711] border border-cyan-900/50 rounded-lg p-2.5 my-2 flex-1 flex flex-col">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[10px] font-bold text-cyan-300 mono flex items-center gap-1">
+              <span>📄</span> CFCFRMS JSON-LD LIEN DRAFT
+            </span>
+            <span class="text-[9px] mono text-slate-500">I4C v2.0 Schema</span>
+          </div>
+          <pre id="jsonld-card" class="bg-black/60 p-2 rounded text-[10px] mono text-slate-300 overflow-x-auto flex-1 max-h-40 leading-snug">
+{
+  "@context": "https://i4c.mha.gov.in/cfcfrms.jsonld",
+  "@type": "GoldenHourLienPreStage",
+  "rail": "RTGS",
+  "loss": "₹12,00,000",
+  "statutory": [
+    "BNS_204_PERSONATING_PUBLIC_SERVANT",
+    "BNS_319_CHEATING_BY_PERSONATION",
+    "IT_ACT_66D"
+  ],
+  "p_freeze": 0.70,
+  "action": "VERIFY_UTR_AND_AUTHORIZE"
+}
+          </pre>
+
+          <!-- 1-Click Human Officer Authorization Button -->
+          <button id="btn-auth-lien" onclick="authorizeLien()" class="mt-2.5 w-full py-2.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs shadow-lg shadow-emerald-950 pulse-glow-green active:scale-95 transition-all flex items-center justify-center gap-1.5">
+            <span>⚡</span> [AUTHORIZE CFCFRMS LIEN PUSH]
+          </button>
+        </div>
+
+        <!-- Human-in-the-Loop Officer Override Controls -->
+        <div class="pt-2 border-t border-slate-800">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Officer Override (XAI Safeguard)</div>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button onclick="applyOfficerOverride('DOWNGRADE_ACOUSTIC_SPIKE')" class="p-1.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 font-semibold active:scale-95 transition">
+              False Acoustic Spike
+            </button>
+            <button onclick="applyOfficerOverride('DOWNGRADE_ROUTINE')" class="p-1.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 font-semibold active:scale-95 transition">
+              Routine Inquiry
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= NOTIFICATION TOAST ================= -->
+  <div id="toast" class="fixed bottom-4 right-4 bg-emerald-900 border border-emerald-500 text-emerald-100 text-xs px-4 py-2.5 rounded-lg shadow-2xl transition-all duration-300 opacity-0 pointer-events-none transform translate-y-2 mono font-bold z-50 flex items-center gap-2">
+    <span>✅</span> <span id="toast-msg">Lien successfully pushed</span>
+  </div>
+
+  <script>
+    // Application State
+    let queueData = [];
+    let selectedStream = null;
+    let ws = null;
+
+    // Connect WebSocket
+    function connectWebSocket() {
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsHost = window.location.host || '127.0.0.1:8080';
+      const url = `${wsProtocol}//${wsHost}/ws/dispatch`;
+
+      ws = new WebSocket(url);
+
+      ws.onopen = () => {
+        console.log("Connected to Aegis-Voice Dispatch WebSocket");
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === "INITIAL_QUEUE_STATE" || msg.type === "QUEUE_UPDATED") {
+            queueData = msg.data.queue;
+            if (!selectedStream || msg.data.selected_stream) {
+              selectedStream = msg.data.selected_stream || queueData[0];
+            }
+            renderQueue();
+            renderSelectedStream();
+            if (msg.data.message) {
+              showToast(msg.data.message);
+            }
+          } else if (msg.type === "STREAM_SELECTED") {
+            selectedStream = msg.data;
+            renderSelectedStream();
+          } else if (msg.type === "LIEN_AUTHORIZED") {
+            showToast(msg.data.message);
+            if (selectedStream && selectedStream.stream_id === msg.data.stream_id) {
+              document.getElementById("btn-auth-lien").innerHTML = "✓ LIEN DISPATCHED TO NPCI";
+              document.getElementById("btn-auth-lien").classList.remove("pulse-glow-green");
+              document.getElementById("btn-auth-lien").classList.add("bg-slate-700", "cursor-default");
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing WS frame", e);
+        }
+      };
+
+      ws.onclose = () => {
+        setTimeout(connectWebSocket, 2000);
+      };
+    }
+
+    function renderQueue() {
+      const container = document.getElementById("queue-container");
+      container.innerHTML = "";
+
+      queueData.forEach((item, idx) => {
+        const isSelected = selectedStream && selectedStream.stream_id === item.stream_id;
+        const card = document.createElement("div");
+        
+        let borderClass = "border-slate-800 bg-slate-900/50 hover:bg-slate-900";
+        let badgeColor = "bg-slate-800 text-slate-300";
+
+        if (item.urgency_score >= 0.72) {
+          borderClass = isSelected ? "border-red-500 bg-red-950/40 shadow-lg shadow-red-950/50" : "border-red-800/60 bg-red-950/20";
+          badgeColor = "bg-red-900/80 text-red-200 border border-red-700/60";
+        } else if (item.spoof_prob > 0.70) {
+          borderClass = isSelected ? "border-amber-500 bg-amber-950/30" : "border-slate-800 bg-slate-900/40 opacity-70";
+          badgeColor = "bg-amber-950 text-amber-300 border border-amber-800";
+        } else {
+          borderClass = isSelected ? "border-cyan-500 bg-cyan-950/30" : "border-slate-800 bg-slate-900/40";
+          badgeColor = "bg-slate-800 text-slate-300";
+        }
+
+        card.className = `p-3 rounded-lg border cursor-pointer transition-all ${borderClass}`;
+        card.onclick = () => selectStream(item.stream_id);
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="mono text-xs font-bold ${item.urgency_score >= 0.72 ? 'text-red-400' : 'text-cyan-400'}">#${item.stream_id}</span>
+              <span class="text-xs font-bold text-slate-200">${item.caller_name}</span>
+            </div>
+            <span class="mono text-xs font-black px-2 py-0.5 rounded ${badgeColor}">
+              U(t): ${item.urgency_score.toFixed(2)}
+            </span>
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-slate-400 mt-1.5">
+            <span>${item.phone_number}</span>
+            <span class="mono text-slate-300 font-semibold">${item.loss_amount}</span>
+          </div>
+          <div class="mt-2 flex items-center justify-between text-[10px] mono">
+            <span class="text-slate-400">${item.badge}</span>
+            <span class="text-slate-500">Wait: ${item.wait_time_sec}s</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderSelectedStream() {
+      if (!selectedStream) return;
+
+      // Update Header Latency Pills
+      if (selectedStream.latency_breakdown) {
+        document.getElementById("lat-sip").innerText = selectedStream.latency_breakdown.sip_ingest_ms + "ms";
+        document.getElementById("lat-vad").innerText = selectedStream.latency_breakdown.vad_ms + "ms";
+        document.getElementById("lat-ser").innerText = selectedStream.latency_breakdown.ser_trt_ms + "ms";
+        document.getElementById("lat-asr").innerText = (selectedStream.latency_breakdown.asr_ctc_ms + selectedStream.latency_breakdown.pii_scrub_ms).toFixed(1) + "ms";
+        document.getElementById("lat-total").innerText = selectedStream.latency_breakdown.total_glass_to_glass_ms + "ms";
+      }
+
+      // VAD coords & physical biomarkers
+      document.getElementById("val-v").innerText = selectedStream.valence.toFixed(2);
+      document.getElementById("val-a").innerText = selectedStream.arousal.toFixed(2);
+      document.getElementById("val-d").innerText = selectedStream.dominance.toFixed(2);
+      document.getElementById("val-f0").innerText = selectedStream.f0_hz + " Hz";
+      document.getElementById("val-jitter").innerText = selectedStream.jitter_pct + "%";
+      document.getElementById("val-hnr").innerText = selectedStream.hnr_db + " dB";
+
+      // Coercion Banner Toggle
+      const coercionBanner = document.getElementById("coercion-banner");
+      if (selectedStream.coercion_detected) {
+        coercionBanner.classList.remove("hidden");
+      } else {
+        coercionBanner.classList.add("hidden");
+      }
+
+      // Transcript with Highlighted PII Redaction
+      const transcriptBox = document.getElementById("transcript-box");
+      let text = selectedStream.transcript_scrubbed || selectedStream.transcript_raw;
+      // Style redact tags
+      text = text.replace(/XXXX-XXXX-\d{4}/g, '<span class="text-emerald-400 bg-emerald-950/80 px-1 rounded font-bold">$&</span>');
+      text = text.replace(/\[REDACTED-OTP\]/g, '<span class="text-amber-400 bg-amber-950/80 px-1 rounded font-bold">$&</span>');
+      text = text.replace(/\[REDACTED-PAN\]/g, '<span class="text-amber-400 bg-amber-950/80 px-1 rounded font-bold">$&</span>');
+      transcriptBox.innerHTML = `<div><span class="text-slate-500 mr-1">[00:12]</span> ${text}</div>`;
+
+      // Threat Keyword Badges
+      const badgesContainer = document.getElementById("threat-badges");
+      badgesContainer.innerHTML = "";
+      if (selectedStream.threat_keywords && selectedStream.threat_keywords.length > 0) {
+        selectedStream.threat_keywords.forEach(kw => {
+          const badge = document.createElement("span");
+          badge.className = "text-[9px] mono font-bold bg-rose-950/80 text-rose-300 border border-rose-800/80 px-1.5 py-0.5 rounded";
+          badge.innerText = kw;
+          badgesContainer.appendChild(badge);
+        });
+      }
+
+      // State machine & Rail
+      document.getElementById("state-pill").innerText = selectedStream.state;
+      document.getElementById("card-rail").innerText = `${selectedStream.detected_rail} (${selectedStream.loss_amount})`;
+      document.getElementById("card-elapsed").innerText = `${selectedStream.elapsed_txn_min} mins`;
+      document.getElementById("card-pfreeze").innerText = `${selectedStream.p_freeze.toFixed(2)} (${selectedStream.p_freeze >= 0.5 ? 'High' : 'Decayed'})`;
+      document.getElementById("pfreeze-bar").style.width = `${Math.round(selectedStream.p_freeze * 100)}%`;
+
+      // State pill highlighting
+      for (let i = 0; i <= 4; i++) {
+        const el = document.getElementById(`state-s${i}`);
+        if (el) {
+          el.className = "p-1 rounded bg-slate-900 text-slate-500 border border-slate-800";
+        }
+      }
+      if (selectedStream.state.startsWith("S4")) {
+        document.getElementById("state-s4").className = "p-1 rounded bg-emerald-900/80 text-emerald-300 border border-emerald-500 shadow-md shadow-emerald-950";
+      } else if (selectedStream.state.startsWith("S2")) {
+        document.getElementById("state-s2").className = "p-1 rounded bg-cyan-900/80 text-cyan-300 border border-cyan-500 shadow-md shadow-cyan-950";
+      }
+
+      // JSON-LD draft card
+      const jsonld = {
+        "@context": "https://i4c.mha.gov.in/cfcfrms.jsonld",
+        "@type": "GoldenHourLienPreStage",
+        "incident_id": `CFCFRMS-1930-${selectedStream.stream_id}`,
+        "rail": selectedStream.detected_rail,
+        "loss": selectedStream.loss_amount,
+        "p_freeze": selectedStream.p_freeze,
+        "statutory": [
+          "BNS_204_PERSONATING_PUBLIC_SERVANT",
+          "BNS_319_CHEATING_BY_PERSONATION",
+          "IT_ACT_66D"
+        ],
+        "threat_vectors": selectedStream.threat_keywords,
+        "evidentiary_status": "NON_EVIDENTIARY_SUPPORT_ONLY"
+      };
+      document.getElementById("jsonld-card").innerText = JSON.stringify(jsonld, null, 2);
+
+      // Reset Lien button
+      const authBtn = document.getElementById("btn-auth-lien");
+      if (selectedStream.lien_pushed) {
+        authBtn.innerHTML = "✓ LIEN DISPATCHED TO NPCI";
+        authBtn.className = "mt-2.5 w-full py-2.5 rounded-lg bg-slate-700 text-slate-300 font-extrabold text-xs cursor-default flex items-center justify-center gap-1.5";
+      } else {
+        authBtn.innerHTML = "⚡ [AUTHORIZE CFCFRMS LIEN PUSH]";
+        authBtn.className = "mt-2.5 w-full py-2.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs shadow-lg shadow-emerald-950 pulse-glow-green active:scale-95 transition-all flex items-center justify-center gap-1.5";
+      }
+    }
+
+    function selectStream(streamId) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: "SELECT_STREAM", stream_id: streamId }));
+      } else {
+        selectedStream = queueData.find(c => c.stream_id === streamId);
+        renderQueue();
+        renderSelectedStream();
+      }
+    }
+
+    function injectStressTest() {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: "TRIGGER_3STREAM_STRESS_TEST" }));
+      } else {
+        fetch("/api/stress-test", { method: "POST" })
+          .then(res => res.json())
+          .then(data => {
+            queueData = data.queue;
+            selectedStream = queueData[0];
+            renderQueue();
+            renderSelectedStream();
+            showToast("3-Stream Stress Test Injected: Stream #106 Promoted to Top!");
+          });
+      }
+    }
+
+    function authorizeLien() {
+      if (!selectedStream) return;
+      fetch("/api/authorize-lien", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stream_id: selectedStream.stream_id })
+      })
+      .then(r => r.json())
+      .then(data => {
+        showToast("CFCFRMS Lien Dispatched to NPCI/Banks!");
+        selectedStream.lien_pushed = true;
+        renderSelectedStream();
+      });
+    }
+
+    function applyOfficerOverride(action) {
+      if (!selectedStream) return;
+      fetch("/api/officer-override", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stream_id: selectedStream.stream_id, action: action })
+      })
+      .then(r => r.json())
+      .then(data => {
+        showToast(`Officer override applied: ${action}`);
+      });
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      document.getElementById("toast-msg").innerText = message;
+      toast.classList.remove("opacity-0", "translate-y-2");
+      toast.classList.add("opacity-100", "translate-y-0");
+      setTimeout(() => {
+        toast.classList.remove("opacity-100", "translate-y-0");
+        toast.classList.add("opacity-0", "translate-y-2");
+      }, 3500);
+    }
+
+    // 60fps HTML5 Canvas Waveform Animation
+    const canvas = document.getElementById("waveformCanvas");
+    const ctx = canvas.getContext("2d");
+    let animationPhase = 0;
+
+    function resizeCanvas() {
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    function drawWaveform() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const width = canvas.width;
+      const height = canvas.height;
+      const centerY = height / 2;
+
+      animationPhase += 0.05;
+
+      // Draw background grid lines
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
+      ctx.lineWidth = 1;
+      for (let x = 0; x < width; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+
+      // Draw primary caller audio waveform
+      ctx.beginPath();
+      ctx.strokeStyle = selectedStream && selectedStream.urgency_score >= 0.72 ? "rgba(239, 68, 68, 0.85)" : "rgba(34, 211, 238, 0.85)";
+      ctx.lineWidth = 2;
+
+      for (let x = 0; x < width; x += 3) {
+        const freq1 = 0.02;
+        const freq2 = 0.05;
+        const amp = selectedStream ? (selectedStream.arousal * 35.0 + 8.0) : 18.0;
+        const y = centerY + Math.sin(x * freq1 + animationPhase) * amp * Math.cos(x * freq2 - animationPhase * 0.5);
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // If coercion detected, draw secondary background transducer harmonic line (<280Hz roll-off)
+      if (selectedStream && selectedStream.coercion_detected) {
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(245, 158, 11, 0.6)";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        for (let x = 0; x < width; x += 3) {
+          const y2 = centerY + Math.sin(x * 0.08 + animationPhase * 1.8) * 12.0;
+          if (x === 0) ctx.moveTo(x, y2);
+          else ctx.lineTo(x, y2);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      requestAnimationFrame(drawWaveform);
+    }
+    requestAnimationFrame(drawWaveform);
+
+    // Initial Load Fallback
+    fetch("/api/health")
+      .then(r => r.json())
+      .then(d => {
+        // Connected to server
+        connectWebSocket();
+      })
+      .catch(() => {
+        // Fallback standalone simulation if server not started yet
+        queueData = [
+          {
+            stream_id: "106",
+            caller_name: "R. K. Sharma (monotone / whispering)",
+            phone_number: "+91 98*** **421",
+            wait_time_sec: 14,
+            loss_amount: "₹12,00,000",
+            detected_rail: "RTGS",
+            elapsed_txn_min: 8.0,
+            arousal: 0.19, valence: 0.22, dominance: 0.18,
+            f0_hz: 128.0, sigma_f0: 4.2, jitter_pct: 1.4, hnr_db: 16.5,
+            spoof_prob: 0.05, coercion_detected: true,
+            transcript_scrubbed: "Sir mera CBI digital arrest ho gaya hai skype par... unhone account emptied kar diya 12 lakh RTGS aadhaar XXXX-XXXX-8832 otp [REDACTED-OTP] diya tha...",
+            threat_keywords: ["DIGITAL ARREST", "CBI WARRANT", "SKYPE", "ACCOUNT EMPTIED", "LAKH", "RTGS", "OTP"],
+            urgency_score: 0.86,
+            badge: "PRIORITY-1 [SHOCK / DISSOCIATION TRIAGE]",
+            state: "S4_LIEN_PAYLOAD_STAGED",
+            p_freeze: 0.70,
+            latency_breakdown: { sip_ingest_ms: 22.0, vad_ms: 1.4, ser_trt_ms: 18.5, asr_ctc_ms: 115.0, pii_scrub_ms: 1.8, late_fusion_ms: 3.0, redis_ui_ms: 15.0, total_glass_to_glass_ms: 444.7 }
+          },
+          {
+            stream_id: "104",
+            caller_name: "Aggressive Citizen (loud yelling)",
+            phone_number: "+91 94*** **912",
+            wait_time_sec: 48,
+            loss_amount: "₹0 (Status Inquiry)",
+            detected_rail: "NONE",
+            elapsed_txn_min: 0.0,
+            arousal: 0.84, valence: 0.35, dominance: 0.78,
+            f0_hz: 265.0, sigma_f0: 24.5, jitter_pct: 1.1, hnr_db: 18.2,
+            spoof_prob: 0.04, coercion_detected: false,
+            transcript_scrubbed: "Main pichle teen din se complaint ka status pooch raha hoon koi sunta kyu nahi yahan pe!",
+            threat_keywords: [],
+            urgency_score: 0.41,
+            badge: "AGITATED - NON-CRITICAL (ROUTINE)",
+            state: "S2_ACOUSTIC_LEXICAL_SURVEILLANCE",
+            p_freeze: 0.0,
+            latency_breakdown: { sip_ingest_ms: 22.0, vad_ms: 1.4, ser_trt_ms: 18.5, asr_ctc_ms: 115.0, pii_scrub_ms: 1.5, late_fusion_ms: 2.8, redis_ui_ms: 14.2, total_glass_to_glass_ms: 327.4 }
+          },
+          {
+            stream_id: "105",
+            caller_name: "ElevenLabs Synthetic Bot (VoIP Spoof)",
+            phone_number: "+1 800*** **331",
+            wait_time_sec: 72,
+            loss_amount: "Unknown (Spoof Probe)",
+            detected_rail: "CRYPTO",
+            elapsed_txn_min: 2.0,
+            arousal: 0.65, valence: 0.40, dominance: 0.50,
+            f0_hz: 182.0, sigma_f0: 1.2, jitter_pct: 0.3, hnr_db: 28.0,
+            spoof_prob: 0.94, coercion_detected: false,
+            transcript_scrubbed: "This is an automated emergency notice regarding fraudulent activity on your federal credit account.",
+            threat_keywords: ["FRAUDULENT"],
+            urgency_score: 0.15,
+            badge: "SYNTHETIC SPOOF - BLOCKED",
+            state: "S2_ACOUSTIC_LEXICAL_SURVEILLANCE",
+            p_freeze: 0.0,
+            latency_breakdown: { sip_ingest_ms: 22.0, vad_ms: 1.4, ser_trt_ms: 18.5, asr_ctc_ms: 110.0, pii_scrub_ms: 1.2, late_fusion_ms: 2.5, redis_ui_ms: 12.0, total_glass_to_glass_ms: 298.0 }
+          }
+        ];
+        selectedStream = queueData[0];
+        renderQueue();
+        renderSelectedStream();
+      });
+  </script>
+</body>
+</html>
