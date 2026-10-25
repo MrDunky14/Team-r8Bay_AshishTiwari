@@ -8,9 +8,9 @@ import math
 from datetime import datetime, timezone
 from typing import Dict, Any, List
 try:
-    from .cfcfrms_jsonld_builder import build_cfcfrms_jsonld
+    from .cfcfrms_jsonld_builder import build_cfcfrms_jsonld, build_i4c_cfcfrms_2026_payload, verify_bsa_section_63_4_digest
 except ImportError:
-    from cfcfrms_jsonld_builder import build_cfcfrms_jsonld
+    from cfcfrms_jsonld_builder import build_cfcfrms_jsonld, build_i4c_cfcfrms_2026_payload, verify_bsa_section_63_4_digest
 
 RAIL_DECAY_CONSTANTS = {
     "UPI": 0.045,     # Half-life ~15.4 min
@@ -33,7 +33,9 @@ def compute_multimodal_triage(
     matched_keywords: List[str],
     elapsed_txn_minutes: float = 8.0,
     detected_rail: str = "RTGS",
-    call_uuid: str = "demo-session"
+    call_uuid: str = "demo-session",
+    state_code: str = "27",
+    officer_id: str = "MH_CYBER_1930_OP_042"
 ) -> Dict[str, Any]:
     """
     Evaluates multimodal inputs and produces real-time urgency, badge, and CFCFRMS payload.
@@ -127,7 +129,9 @@ def compute_multimodal_triage(
             elapsed_minutes=elapsed_txn_minutes,
             threat_vectors=threat_vectors,
             urgency_score=u_score,
-            victim_state="SHOCK_PARALYSIS" if shock_paralysis else "ACUTE_PANIC"
+            victim_state="SHOCK_PARALYSIS" if shock_paralysis else "ACUTE_PANIC",
+            state_code=state_code,
+            officer_id=officer_id
         )
     elif p_freeze >= 0.50 and u_score >= 0.60:
         state = "S3_GOLDEN_HOUR_INTERDICTION"

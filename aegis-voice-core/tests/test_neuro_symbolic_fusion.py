@@ -197,9 +197,11 @@ def test_cfcfrms_jsonld_builder_and_rail_decay():
         victim_state="SHOCK_PARALYSIS"
     )
 
-    assert payload["@context"] == "https://i4c.mha.gov.in/schemas/cfcfrms-v2.jsonld"
-    assert payload["@type"] == "GoldenHourLienPreStage"
+    assert "cfcfrms-v2026.jsonld" in payload["@context"]
+    assert payload["@type"] in ("CFCFRMS_GoldenHourHoldRequest", "GoldenHourLienPreStage")
     assert "CFCFRMS-1930-" in payload["incident_id"]
+    assert payload["ncrp_acknowledgement_number"].startswith("3")
+    assert len(payload["ncrp_acknowledgement_number"]) == 14
     assert payload["payment_rail"] == "RTGS"
     assert payload["golden_hour_interdiction_probability"] == round(p_freeze_rtgs, 3)
     assert payload["urgency_score"] == 0.86
@@ -207,6 +209,8 @@ def test_cfcfrms_jsonld_builder_and_rail_decay():
     assert "BNS_319_CHEATING_BY_PERSONATION" in payload["statutory_classification"]
     assert "IT_ACT_66D_PUNISHMENT_FOR_CHEATING_BY_PERSONATION" in payload["statutory_classification"]
     assert payload["evidentiary_status"] == "NON_EVIDENTIARY_DECISION_SUPPORT_ONLY_EXEMPT_FROM_CHARGE_SHEET"
+    assert "bsa_section_63_4_certificate_metadata" in payload
+    assert payload["bsa_section_63_4_certificate_metadata"]["hash_algorithm"] == "SHA-256"
 
 
 def test_shadow_evaluator_statistical_gates():

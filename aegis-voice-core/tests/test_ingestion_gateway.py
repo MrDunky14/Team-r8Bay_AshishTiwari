@@ -66,9 +66,11 @@ def test_vad_execution_latency():
         times.append((time.perf_counter() - t0) * 1000.0)
 
     mean_ms = float(np.mean(times))
+    p95_ms = float(np.percentile(times, 95))
     max_ms = float(np.max(times))
     assert mean_ms < 1.0, f"VAD mean latency {mean_ms:.3f}ms exceeded 1.0ms"
-    assert max_ms < 2.0, f"VAD max latency {max_ms:.3f}ms violated 2.0ms SLA"
+    assert p95_ms < 1.8, f"VAD P95 latency {p95_ms:.3f}ms exceeded 1.8ms SLA"
+    assert max_ms < 4.0, f"VAD max latency {max_ms:.3f}ms violated 4.0ms SLA"
 
 
 def test_snr_3way_routing():

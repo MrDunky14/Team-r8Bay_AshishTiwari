@@ -62,24 +62,59 @@ class ZeroShotProsodicCalibrator:
         delta_z = float(abs(f0 - self.mu_f0) / max(self.sigma_f0, 5.0))
         return delta_z
 
-def detect_secondary_transducer_coercion(
+def detect_secondary_transducer_coercion_pstn_safe(
     raw_audio_16k: np.ndarray,
     pre_utterance_pause_ms: float,
-    primary_hnr_db: float
-) -> Tuple[bool, dict]:
+    primary_hnr_db: float,
+    is_pstn_8k_upsampled: bool = True
+) -> Tuple[bool, float]:
     """
-    Frontier 1: Detects secondary laptop/phone speakerphone coaching in background.
-    Laptop/tablet micro-speakers exhibit steep acoustic roll-off <280Hz and
-    harmonic distortion peaks in 1.8kHz - 3.2kHz.
+    PSTN-Safe Frontier 1 Coercion Detector:
+    Accounts for 300Hz-3400Hz ITU-T G.711 carrier bandpass filtering on Indian 1930 trunks.
     """
     if len(raw_audio_16k) < 320:
-        return False, {"transducer_ratio": 1.0, "is_coached_pause": False}
+        return False, 1.0
 
     spectrum = np.abs(np.fft.rfft(raw_audio_16k))
     freqs = np.fft.rfftfreq(len(raw_audio_16k), d=1.0 / 16000)
 
-    # Sub-band 80-280Hz vs Mid-harmonic 1.8k-3.2kHz
-    low_band_mask = (freqs >= 80) & (freqs < 280)
+    # If 8kHz PSTN trunk, measure 300-550Hz chest resonance band instead of <280Hz
+    low_min, low_max = (300, 550) if is_pstn_8k_upsampled else (80, 280)
+    low_band_mask = (freqs >= low_min) & (freqs < low_max)
+    mid_band_mask = (freqs >= 1800) & (freqs <= 3200)
+
+    low_band_energy = float(np.mean(spectrum[low_band_mask]) + 1e-8) if np.any(low_band_mask) else 1e-8
+    mid_harmonic_energy = float(np.mean(spectrum[mid_band_mask]) + 1e-8) if np.any(mid_band_mask) else 1e-8
+
+    transducer_ratio = mid_harmonic_energy / low_band_energy
+    is_coached_pause = 1100.0 <= pre_utterance_pause_ms <= 2400.0
+    threshold = 3.2 if is_pstn_8k_upsampled else 3.8
+
+    flagged = bool(is_coached_pause and transducer_ratio > threshold and primary_hnr_db < 14.0)
+    return flagged, round(float(transducer_ratio), 2)
+
+
+def detect_secondary_transducer_coercion(
+    raw_audio_16k: np.ndarray,
+    pre_utterance_pause_ms: float,
+    primary_hnr_db: float,
+    is_pstn_8k_upsampled: bool = False
+) -> Tuple[bool, dict]:
+    """
+    Frontier 1: Detects secondary laptop/phone speakerphone coaching in background.
+    Laptop/tablet micro-speakers exhibit steep acoustic roll-off and
+    harmonic distortion peaks in 1.8kHz - 3.2kHz.
+    Supports is_pstn_8k_upsampled=True to guard against G.711 carrier cutoff artifacts.
+    """
+    if len(raw_audio_16k) < 320:
+        return False, {"transducer_ratio": 1.0, "is_coached_pause": False, "is_pstn_8k_upsampled": is_pstn_8k_upsampled}
+
+    spectrum = np.abs(np.fft.rfft(raw_audio_16k))
+    freqs = np.fft.rfftfreq(len(raw_audio_16k), d=1.0 / 16000)
+
+    # Sub-band 80-280Hz (standard) or 300-550Hz (PSTN carrier safe) vs Mid-harmonic 1.8k-3.2kHz
+    low_min, low_max = (300, 550) if is_pstn_8k_upsampled else (80, 280)
+    low_band_mask = (freqs >= low_min) & (freqs < low_max)
     mid_band_mask = (freqs >= 1800) & (freqs <= 3200)
 
     low_band_energy = float(np.mean(spectrum[low_band_mask])) + 1e-8 if np.any(low_band_mask) else 1e-8
@@ -88,12 +123,14 @@ def detect_secondary_transducer_coercion(
 
     # Bimodal coaching turn-taking delay (1100ms - 2400ms) + high transducer ratio
     is_coached_pause = 1100.0 <= pre_utterance_pause_ms <= 2400.0
-    is_tinny_secondary_source = transducer_ratio > 3.8
+    threshold = 3.2 if is_pstn_8k_upsampled else 3.8
+    is_tinny_secondary_source = transducer_ratio > threshold
     coercion_detected = bool(is_coached_pause and is_tinny_secondary_source and primary_hnr_db < 14.0)
 
     return coercion_detected, {
         "transducer_ratio": round(float(transducer_ratio), 2),
         "pre_utterance_pause_ms": round(float(pre_utterance_pause_ms), 1),
         "is_coached_pause": is_coached_pause,
-        "is_tinny_secondary_source": is_tinny_secondary_source
+        "is_tinny_secondary_source": is_tinny_secondary_source,
+        "is_pstn_8k_upsampled": is_pstn_8k_upsampled
     }

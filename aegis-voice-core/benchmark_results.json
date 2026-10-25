@@ -1,6 +1,6 @@
 {
   "benchmark_metadata": {
-    "timestamp_utc": "2026-10-25T07:57:38.532282+00:00",
+    "timestamp_utc": "2026-10-25T10:10:07.228698+00:00",
     "suite_version": "1.0.0-adversarial-r2",
     "evaluator": "AegisVoiceAdversarialBenchmarkSuite",
     "total_scenarios": 5,
@@ -8,7 +8,7 @@
     "scenarios_failed": 0,
     "overall_status": "ALL_GATES_PASSED",
     "production_graduation_status": "GRADUATION_APPROVED_READY_FOR_INDICATIVE_UI",
-    "execution_duration_sec": 0.0517
+    "execution_duration_sec": 0.0401
   },
   "scenarios": {
     "scenario_1_stoic_victim_shock_paralysis": {
@@ -16,7 +16,7 @@
       "name": "Stoic Victim / Shock Paralysis",
       "status": "PASSED",
       "passed": true,
-      "execution_time_ms": 0.22,
+      "execution_time_ms": 0.293,
       "target_urgency_min": 0.85,
       "measured_urgency": 1.0,
       "badge": "PRIORITY-1 [SHOCK / DISSOCIATION TRIAGE]",
@@ -44,7 +44,7 @@
       "name": "Performative Screaming / Yelling",
       "status": "PASSED",
       "passed": true,
-      "execution_time_ms": 0.067,
+      "execution_time_ms": 0.07,
       "target_urgency_max": 0.45,
       "measured_urgency": 0.41,
       "badge": "AGITATED - NON-CRITICAL (ROUTINE)",
@@ -66,7 +66,7 @@
       "name": "Synthetic Deepfake Spoof",
       "status": "PASSED",
       "passed": true,
-      "execution_time_ms": 8.82,
+      "execution_time_ms": 7.927,
       "target_urgency": 0.15,
       "measured_urgency": 0.15,
       "badge": "SYNTHETIC SPOOF - BLOCKED",
@@ -87,7 +87,7 @@
       "name": "Frontier 1 Scammer-in-the-Background Coercion",
       "status": "PASSED",
       "passed": true,
-      "execution_time_ms": 1.275,
+      "execution_time_ms": 1.313,
       "coercion_detected": true,
       "is_coached_pause": true,
       "is_tinny_secondary_source": true,
@@ -110,7 +110,7 @@
       "name": "Silent Shadow Mode Statistical Gates",
       "status": "PASSED",
       "passed": true,
-      "execution_time_ms": 40.453,
+      "execution_time_ms": 29.637,
       "cohort_size": 200,
       "metrics": {
         "total_calls_evaluated": 200,

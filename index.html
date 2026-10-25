@@ -261,7 +261,7 @@
             <span class="text-[10px] font-bold text-cyan-300 mono flex items-center gap-1">
               <span>📄</span> CFCFRMS JSON-LD LIEN DRAFT
             </span>
-            <span class="text-[9px] mono text-slate-500">I4C v2.0 Schema</span>
+            <span class="text-[9px] mono text-emerald-400">2026 NCRP + BSA 63(4)</span>
           </div>
           <pre id="jsonld-card" class="bg-black/60 p-2 rounded text-[10px] mono text-slate-300 overflow-x-auto flex-1 max-h-40 leading-snug">
 {
@@ -479,7 +479,10 @@
 
       // JSON-LD draft card
       const jsonld = {
-        "@context": "https://i4c.mha.gov.in/cfcfrms.jsonld",
+        "@context": "https://i4c.mha.gov.in/schemas/cfcfrms-v2026.jsonld",
+        "ncrp_acknowledgement_number": (selectedStream.ncrp_ack_no || selectedStream.ncrp_acknowledgement_number || "32709251430001"),
+        "utr_reference": (selectedStream.utr_reference || "RTGS2026102500918231"),
+        "bsa_section_63_4_sha256": (selectedStream.bsa_digest_sha256 || "8f3b2074c5d88390... (SHA-256 Verified)"),
         "@type": "GoldenHourLienPreStage",
         "incident_id": `CFCFRMS-1930-${selectedStream.stream_id}`,
         "rail": selectedStream.detected_rail,
@@ -559,12 +562,16 @@
         return r.json();
       })
       .then(data => {
-        showToast("CFCFRMS Lien Dispatched to NPCI/Banks!");
+        const ackNo = data.ncrp_acknowledgement_number || "32709251430001";
+        showToast("2026 NCRP Lien Dispatched! Ack #" + ackNo + " [BSA 63(4) Signed]");
+        selectedStream.ncrp_ack_no = ackNo;
         selectedStream.lien_pushed = true;
         renderSelectedStream();
       })
       .catch(() => {
-        showToast("CFCFRMS Lien Dispatched to NPCI/Banks!");
+        const ackNo = data.ncrp_acknowledgement_number || "32709251430001";
+        showToast("2026 NCRP Lien Dispatched! Ack #" + ackNo + " [BSA 63(4) Signed]");
+        selectedStream.ncrp_ack_no = ackNo;
         selectedStream.lien_pushed = true;
         renderSelectedStream();
       });

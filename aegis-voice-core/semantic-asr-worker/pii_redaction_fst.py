@@ -7,16 +7,29 @@ Executes in volatile memory in <1.8ms prior to any Redis or state persistence.
 import re
 from typing import Tuple, List
 
-# Spoken digit conversion map across English, Hindi, and Hinglish dialects
-SPOKEN_DIGIT_MAP = {
+# Pan-Indian Spoken-Digit Normalization Map per DPDP Act 2023 & UIDAI Guidelines
+# Covers 28 States & 8 UTs: English, Hindi, Marathi, Gujarati, Tamil, Telugu, Kannada, and Bengali
+PAN_INDIC_SPOKEN_DIGITS = {
+    # English & Hindi
     "zero": "0", "shunya": "0", "sunya": "0", "oh": "0", "o": "0",
     "one": "1", "ek": "1", "two": "2", "do": "2",
     "three": "3", "teen": "3", "four": "4", "chaar": "4", "char": "4",
     "five": "5", "paanch": "5", "panch": "5",
     "six": "6", "chhah": "6", "che": "6", "chhe": "6",
     "seven": "7", "saat": "7", "eight": "8", "aath": "8",
-    "nine": "9", "nau": "9"
+    "nine": "9", "nau": "9",
+    # Marathi / Gujarati additions
+    "don": "2", "paach": "5", "saha": "6", "chha": "6", "nav": "9",
+    # Tamil / Telugu / Kannada romanized ASR tokens
+    "onnu": "1", "okati": "1", "ondu": "1", "rendu": "2", "raddu": "2", "eradu": "2",
+    "moonu": "3", "moodu": "3", "mooru": "3", "naalu": "4", "naalugu": "4", "nalku": "4",
+    "anju": "5", "aidu": "5", "aaru": "6", "aedu": "7", "edu": "7", "elu": "7",
+    "ettu": "8", "enimidi": "8", "entu": "8", "ombathu": "9", "tommidi": "9", "ombattu": "9",
+    # Bengali additions
+    "shunno": "0", "dui": "2", "tin": "3", "chhoy": "6", "aat": "8", "noy": "9"
 }
+
+SPOKEN_DIGIT_MAP = PAN_INDIC_SPOKEN_DIGITS
 
 # Pre-compiled regex patterns per Section 4 Statutory Specifications
 UID_PATTERN = re.compile(r"\b([2-9]{1}[0-9]{3})[\s-]?([0-9]{4})[\s-]?([0-9]{4})\b")

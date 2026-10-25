@@ -1,0 +1,27 @@
+{
+  "sdc_provisioner_version": "1.0-I4C-COMPLIANT",
+  "admissibility_standard": "BHARATIYA_SAKSHYA_ADHINIYAM_2023_SEC_63_4",
+  "zero_disk_runtime_note": "Models are memory-mapped into volatile RAM on startup; zero audio persists on disk.",
+  "models": {
+    "silero_vad_v5_int8.onnx": {
+      "status": "SYNTHESIZED_INT8_STUB",
+      "sha256": "ba26169a51f403abc797d94a241049a5dbda543b7a7ad0667751bbea170d8385",
+      "description": "Silero VAD v5 INT8 quantized speech/silence detector (1.4ms inference)"
+    },
+    "emotion2vec_plus_base_int8.onnx": {
+      "status": "SYNTHESIZED_INT8_STUB",
+      "sha256": "e58259c4a42d8f668db31bb7a406ae3d8bf49d778ae6117c9514c279bc6bd7f4",
+      "description": "emotion2vec+ Speech Emotion Recognition 768-dim frame encoder (Valence/Arousal/Dominance)"
+    },
+    "indic_conformer_hi_en_int8.onnx": {
+      "status": "SYNTHESIZED_INT8_STUB",
+      "sha256": "78c9b5d047c3a001d3f3f76ab560da240c49ff64f540a0376567ef53b29975fc",
+      "description": "AI4Bharat IndicConformer 135M INT8 CTC decoder (Hinglish/Indian English)"
+    },
+    "aasist_l_anti_spoof_int8.onnx": {
+      "status": "SYNTHESIZED_INT8_STUB",
+      "sha256": "69a8da37c288371fa94c6305e5106b682424aa27896c760f30ce73f2b245d724",
+      "description": "AASIST-L Graph Neural Network Audio Anti-Spoofing / Deepfake detector"
+    }
+  }
+}
