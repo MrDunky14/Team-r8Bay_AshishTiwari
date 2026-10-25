@@ -1,11 +1,14 @@
 # Project Aegis-Voice: Sovereign Multimodal Speech Emotion Recognition & Urgency Triage Core for 1930 Cybercrime Telephony
 
-[![Hackathon](https://img.shields.io/badge/Vecnaverse-Hackathon%20Submission-00F0FF?style=for-the-badge&logo=shield)](https://github.com/)
+[![Hackathon](https://img.shields.io/badge/Vecnaverse-Hackathon%20Submission-00F0FF?style=for-the-badge&logo=shield)](https://github.com/MrDunky14/Team-r8Bay_AshishTiwari)
+[![Live Console](https://img.shields.io/badge/Live%20Console-GitHub%20Pages-22C55E?style=for-the-badge&logo=github)](https://mrdunky14.github.io/Team-r8Bay_AshishTiwari/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-00E676?style=for-the-badge)](LICENSE)
-[![Latency SLA](https://img.shields.io/badge/Glass--to--Glass-444.7ms%20%28SLA%20%3C800ms%29-38BDF8?style=for-the-badge)](file:///k:/My_ML_Projects/Team%CF%80r8Bay_AshishTiwari/aegis-voice-core/presentation/Aegis_Voice_5_Slide_Deck.md#slide-2-live-glass-to-glass-latency-telemetry-500ms-proof)
-[![DPDP Act Compliance](https://img.shields.io/badge/DPDP%20Act%202023-Zero--Disk%20RAM%20mlock-A855F7?style=for-the-badge)](file:///k:/My_ML_Projects/Team%CF%80r8Bay_AshishTiwari/aegis-voice-core/semantic-asr-worker/pii_redaction_fst.py)
+[![Latency SLA](https://img.shields.io/badge/Glass--to--Glass-231.5ms%20%28SLA%20%3C800ms%29-38BDF8?style=for-the-badge)](https://mrdunky14.github.io/Team-r8Bay_AshishTiwari/)
+[![DPDP Act Compliance](https://img.shields.io/badge/DPDP%20Act%202023-Zero--Disk%20RAM%20mlock-A855F7?style=for-the-badge)](https://github.com/MrDunky14/Team-r8Bay_AshishTiwari/blob/main/aegis-voice-core/semantic-asr-worker/pii_redaction_fst.py)
 
-> **Submission Window Notice:** Vecnaverse Hackathon Submission (Team πr8Bay / Ashish Tiwari). Complete implementation across **Track 1** (60-minute sprint deliverables) and **Track 2** (enterprise 6-microservice architecture).
+> **Live Deployment Link:** [https://mrdunky14.github.io/Team-r8Bay_AshishTiwari/](https://mrdunky14.github.io/Team-r8Bay_AshishTiwari/)  
+> **GitHub Repository:** [https://github.com/MrDunky14/Team-r8Bay_AshishTiwari](https://github.com/MrDunky14/Team-r8Bay_AshishTiwari)  
+> **Submission Notice:** Vecnaverse Hackathon Submission (Team πr8Bay / Ashish Tiwari). Complete implementation across **Track 1** (60-minute sprint deliverables) and **Track 2** (enterprise 6-microservice architecture with 102/102 automated tests passing).
 
 ---
 
