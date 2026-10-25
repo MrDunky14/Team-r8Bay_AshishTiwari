@@ -5,3 +5,8 @@ node_modules/
 .next/
 dist/
 build/
+.hyperframes/
+.hf-create*
+.brag.hf-transaction*
+*.tmp
+temp/

@@ -1,0 +1,45 @@
+# Aegis-Voice Launch Share Copy
+
+## Option 1: X / Twitter (High Impact)
+In cyber extortion & digital arrest scams, victims freeze funds within minutes. 
+
+We built **Aegis-Voice**: real-time AI triage for 1930 Cybercrime Helpline. 
+⚡ Sub-300ms acoustic SER + PII-scrubbed ASR
+🛡️ Zero-disk DPDP volatile ring buffers
+🏛️ Instant automated CFCFRMS bank freeze lien generation
+
+Live interactive console: https://mrdunky14.github.io/Team-r8Bay_AshishTiwari/
+Source: https://github.com/MrDunky14/Team-r8Bay_AshishTiwari
+
+#CyberSecurity #FinTech #AI #SpeechAI #Vecnaverse #IndiaTech
+
+---
+
+## Option 2: LinkedIn / Long Form (Architectural Deep Dive)
+When transnational cyber fraud syndicates stage "digital arrests", victims lose their life savings in minutes before a human dispatcher can manually transcribe bank account details.
+
+For the Vecnaverse Hackathon, our team built **Aegis-Voice Core** (`Teamπr8Bay_AshishTiwari`):
+A mission-critical voice triage engine running alongside FreeSWITCH telephony bridges for India's 1930 Cybercrime Helpline.
+
+Key Innovations:
+• **Glass-to-Glass <500ms Latency:** P50 of 231.5ms across parallel eGeMAPS acoustic emotion recognition and whisper/rnnoise semantic ASR.
+• **DPDP Act 2023 Compliance:** Zero-disk audio persistence using pinned volatile RAM ring buffers (`tmpfs`). Zero audio bytes touch SSD storage.
+• **Wire-Level PII Shield:** FST-based deterministic regex and phonetic masking prevents raw Aadhaar and PAN numbers from ever reaching browser WebSockets.
+• **Instant CFCFRMS Liens:** Generates automated JSON-LD fraud freeze packages ready for NPCI / Indian Cyber Crime Coordination Centre (I4C).
+
+Check out our live simulation console and 6-microservice architecture:
+🌐 Live Demo: https://mrdunky14.github.io/Team-r8Bay_AshishTiwari/
+💻 GitHub: https://github.com/MrDunky14/Team-r8Bay_AshishTiwari
+
+---
+
+## Option 3: Developer / Show HN / Discord (Terse & Technical)
+**Show HN: Aegis-Voice – Real-time voice triage engine for cyber fraud helplines (<300ms, zero-disk audio, auto bank lien)**
+
+- **Stack:** Python 3.12, FastAPI, WebSockets, FreeSWITCH SMBF, RNNoise, Silero VAD v5, eGeMAPS/OpenSMILE acoustic SER, Faster-Whisper, WebGL/Canvas 60fps frontend.
+- **Problem:** India's 1930 cybercrime helpline needs to freeze beneficiary mule accounts before syndicates siphon funds, but manual triage takes minutes.
+- **Solution:** 20ms PCM audio streaming, late-fusion neuro-symbolic coercion scoring, wire-level PII scrubbing, and automated JSON-LD CFCFRMS bank freeze generation.
+- **Latency:** Measured P50 231.5ms, P99 338.2ms. Passed 102/102 test suite + 5 adversarial benchmarks.
+
+Live Simulator: https://mrdunky14.github.io/Team-r8Bay_AshishTiwari/
+Repo: https://github.com/MrDunky14/Team-r8Bay_AshishTiwari
